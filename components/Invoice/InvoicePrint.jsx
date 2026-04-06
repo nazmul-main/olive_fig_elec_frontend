@@ -11,12 +11,19 @@ const InvoicePrint = forwardRef(({ invoiceData }, ref) => {
           body { font-family: sans-serif; color: #000; }
         `}
       </style>
-      <div className="p-8 max-w-3xl mx-auto border border-gray-200">
-        <div className="text-center border-b pb-4 mb-4">
-          <h1 className="text-2xl font-bold">Olive & Fig Electronics</h1>
-          <p className="text-sm">123 Tech Avenue, Dhaka, Bangladesh</p>
-          <p className="text-sm">Phone: +880 1234 567890</p>
+      <div className="p-8 max-w-3xl mx-auto border border-gray-200 relative overflow-hidden">
+        {/* Watermark */}
+        <div className="absolute inset-0 z-0 flex items-center justify-center opacity-[0.03] pointer-events-none select-none overflow-hidden max-h-screen">
+          <img src="/logo.png" alt="watermark" className="w-[80%] h-auto grayscale transform rotate-[-30deg]" />
         </div>
+
+        <div className="relative z-10">
+          <div className="text-center border-b pb-4 mb-4 flex flex-col items-center">
+            <img src="/logo-invoice.png" alt="Olive & Fig Logo" className="h-20 w-auto mb-2 object-contain" />
+            <h1 className="text-2xl font-bold">Olive & Fig Electronics</h1>
+            <p className="text-sm">123 Tech Avenue, Dhaka, Bangladesh</p>
+            <p className="text-sm">Phone: +880 1234 567890</p>
+          </div>
 
         <div className="flex justify-between mb-8">
           <div>
@@ -80,6 +87,7 @@ const InvoicePrint = forwardRef(({ invoiceData }, ref) => {
         <div className="mt-16 pt-4 border-t text-sm text-center">
           <p>Thank you for your business!</p>
           <p>Goods sold are not returnable without a valid receipt.</p>
+        </div>
         </div>
       </div>
     </div>
