@@ -33,7 +33,9 @@ export default function Sidebar({ isOpen, setIsOpen }) {
 
   // Close mobile sidebar on route change
   useEffect(() => {
-    setIsOpen(false);
+    if (window.innerWidth < 768) {
+      setIsOpen(false);
+    }
   }, [pathname, setIsOpen]);
 
   // Filter links by user role
@@ -118,9 +120,11 @@ export default function Sidebar({ isOpen, setIsOpen }) {
         <div className="flex-shrink-0 w-14" aria-hidden="true" />
       </div>
 
-      {/* Desktop Sidebar (Fixed) */}
-      <div className="hidden md:flex md:flex-shrink-0 no-print">
-        <div className="flex flex-col w-64">
+      {/* Desktop Sidebar (Togglable) */}
+      <div 
+        className={`hidden md:flex md:flex-shrink-0 no-print transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] overflow-hidden border-r border-gray-200 ${isOpen ? 'w-64' : 'w-0 border-none'}`}
+      >
+        <div className={`flex flex-col w-64 h-full transition-opacity duration-300 ${isOpen ? 'opacity-100 delay-150' : 'opacity-0 pointer-events-none'}`}>
           <SidebarContent />
         </div>
       </div>

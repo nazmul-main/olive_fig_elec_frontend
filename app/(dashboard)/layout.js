@@ -11,7 +11,7 @@ export default function DashboardLayout({ children }) {
   const router = useRouter();
   const [checking, setChecking] = useState(true);
 
-  const [isSidebarOpen, setSidebarOpen] = useState(false);
+  const [isSidebarOpen, setSidebarOpen] = useState(true);
 
   useEffect(() => {
     const fn = async () => {
@@ -40,8 +40,8 @@ export default function DashboardLayout({ children }) {
       {/* Sidebar for Desktop & Mobile */}
       <Sidebar isOpen={isSidebarOpen} setIsOpen={setSidebarOpen} />
       
-      <div className="flex flex-col w-0 flex-1 overflow-hidden">
-        <Header onMenuClick={() => setSidebarOpen(true)} />
+      <div className="flex flex-col w-0 flex-1 overflow-hidden transition-all duration-300">
+        <Header isOpen={isSidebarOpen} onMenuClick={() => setSidebarOpen(!isSidebarOpen)} />
         <main className="flex-1 relative z-0 overflow-y-auto focus:outline-none">
           <div className="p-4 sm:p-6 lg:p-8">
             {children}
