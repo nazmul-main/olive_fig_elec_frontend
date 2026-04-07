@@ -11,8 +11,11 @@ export default function StaffPage() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [selectedUser, setSelectedUser] = useState(null);
   const [showToggleModal, setShowToggleModal] = useState(false);
-  const [isToggling, setIsToggling] = useState(false);
+  const [showConfirmEditModal, setShowConfirmEditModal] = useState(false);
+  const [isActionLoading, setIsActionLoading] = useState(false);
   const [userToToggle, setUserToToggle] = useState(null);
   const [formData, setFormData] = useState({ name: '', email: '', password: '', role: 'salesman' });
   const { user: currentUser } = useAuthStore();
@@ -35,19 +38,60 @@ export default function StaffPage() {
   };
 
   const handleOpenModal = () => {
+    setIsEditMode(false);
+    setSelectedUser(null);
     setFormData({ name: '', email: '', password: '', role: 'salesman' });
+    setIsModalOpen(true);
+  };
+
+  const handleEditClick = (user) => {
+    setIsEditMode(true);
+    setSelectedUser(user);
+    setFormData({ 
+      name: user.name, 
+      email: user.email, 
+      password: '', // Leave blank unless changing
+      role: user.role 
+    });
     setIsModalOpen(true);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (isEditMode) {
+      // For editing, we trigger the confirmation modal first
+      setShowConfirmEditModal(true);
+    } else {
+      // Create mode
+      try {
+        await api.post('/auth/register', formData);
+        toast.success('Staff/User created');
+        setIsModalOpen(false);
+        fetchUsers();
+      } catch (e) {
+        toast.error(e.response?.data?.message || 'Error creating user');
+      }
+    }
+  };
+
+  const confirmEdit = async (adminPassword) => {
     try {
-      await api.post('/auth/register', formData);
-      toast.success('Staff/User created');
-      setIsModalOpen(false);
-      fetchUsers();
+      setIsActionLoading(true);
+      const { data } = await api({
+        method: 'put',
+        url: `/auth/users/${selectedUser._id}`,
+        data: { ...formData, adminPassword }
+      });
+      if (data.success) {
+        toast.success('User updated successfully');
+        fetchUsers();
+        setIsModalOpen(false);
+        setShowConfirmEditModal(false);
+      }
     } catch (e) {
-      toast.error(e.response?.data?.message || 'Error creating user');
+      toast.error(e.response?.data?.message || 'Error updating user');
+    } finally {
+      setIsActionLoading(false);
     }
   };
 
@@ -58,7 +102,7 @@ export default function StaffPage() {
 
   const confirmToggle = async (password) => {
     try {
-      setIsToggling(true);
+      setIsActionLoading(true);
       const { data } = await api({
         method: 'patch',
         url: `/auth/users/${userToToggle._id}/toggle`,
@@ -72,7 +116,7 @@ export default function StaffPage() {
     } catch (e) {
       toast.error(e.response?.data?.message || 'Error updating status');
     } finally {
-      setIsToggling(false);
+      setIsActionLoading(false);
     }
   };
 
@@ -108,13 +152,14 @@ export default function StaffPage() {
         <DataTable 
           columns={columns} 
           data={users} 
+          onEdit={currentUser?.role === 'admin' ? handleEditClick : null} 
           onDelete={currentUser?.role === 'admin' ? handleToggleClick : null} 
         />
       )}
 
       {/* Note: onDelete acts as the 'toggle' trigger for users */}
       
-      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Add System User">
+      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={isEditMode ? 'Edit System User' : 'Add System User'}>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700">Full Name</label>
@@ -125,8 +170,8 @@ export default function StaffPage() {
             <input type="email" required value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:ring-brand focus:border-brand sm:text-sm" />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">Password</label>
-            <input type="text" required value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:ring-brand focus:border-brand sm:text-sm" placeholder="Min 6 characters" />
+            <label className="block text-sm font-medium text-gray-700">{isEditMode ? 'New Password (Leave blank to keep current)' : 'Password'}</label>
+            <input type="text" required={!isEditMode} value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:ring-brand focus:border-brand sm:text-sm" placeholder={isEditMode ? "New password" : "Min 6 characters"} />
           </div>
           <div>
              <label className="block text-sm font-medium text-gray-700">Role</label>
@@ -138,7 +183,7 @@ export default function StaffPage() {
           </div>
           <div className="mt-5 sm:mt-6">
             <button type="submit" className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-brand text-base font-medium text-white hover:bg-brand-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand sm:text-sm transition-colors">
-              Create User
+              {isEditMode ? 'Update User Information' : 'Create User'}
             </button>
           </div>
         </form>
@@ -148,8 +193,19 @@ export default function StaffPage() {
         isOpen={showToggleModal}
         onClose={() => setShowToggleModal(false)}
         onConfirm={confirmToggle}
-        loading={isToggling}
+        loading={isActionLoading}
         title={userToToggle?.isActive ? `Deactivate ${userToToggle?.name}?` : `Activate ${userToToggle?.name}?`}
+      />
+
+      <ConfirmDeleteModal
+        isOpen={showConfirmEditModal}
+        onClose={() => setShowConfirmEditModal(false)}
+        onConfirm={confirmEdit}
+        loading={isActionLoading}
+        title={`Update Info for ${selectedUser?.name}?`}
+        description="For security, please enter your administrator password to confirm these changes."
+        confirmText="Update Information"
+        confirmColor="bg-brand hover:bg-brand-dark focus:ring-brand"
       />
     </div>
   );

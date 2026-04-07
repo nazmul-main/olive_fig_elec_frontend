@@ -2,7 +2,16 @@
 import { useState } from 'react';
 import Modal from './Modal';
 
-export default function ConfirmDeleteModal({ isOpen, onClose, onConfirm, title = 'Confirm Deletion', loading = false }) {
+export default function ConfirmDeleteModal({ 
+  isOpen, 
+  onClose, 
+  onConfirm, 
+  title = 'Confirm Deletion', 
+  description = 'This action is irreversible. For security, please enter your administrator password to confirm deletion.',
+  confirmText = 'Delete Permanently',
+  confirmColor = 'bg-red-600 hover:bg-red-700 focus:ring-red-500',
+  loading = false 
+}) {
   const [password, setPassword] = useState('');
 
   const handleSubmit = (e) => {
@@ -20,7 +29,7 @@ export default function ConfirmDeleteModal({ isOpen, onClose, onConfirm, title =
     <Modal isOpen={isOpen} onClose={handleClose} title={title}>
       <form onSubmit={handleSubmit} className="space-y-4">
         <p className="text-sm text-gray-500">
-          This action is irreversible. For security, please enter your administrator password to confirm deletion.
+          {description}
         </p>
         
         <div>
@@ -48,9 +57,9 @@ export default function ConfirmDeleteModal({ isOpen, onClose, onConfirm, title =
           <button
             type="submit"
             disabled={loading || !password}
-            className="w-full sm:w-auto inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:text-sm disabled:opacity-50"
+            className={`w-full sm:w-auto inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 text-base font-medium text-white focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 ${confirmColor}`}
           >
-            {loading ? 'Deleting...' : 'Delete Permanently'}
+            {loading ? 'Processing...' : confirmText}
           </button>
         </div>
       </form>
