@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import api from '@/lib/axios';
 import StatsCard from '@/components/ui/StatsCard';
+import DataTable from '@/components/ui/DataTable';
 import { 
   TrendingUp, 
   ShoppingBag, 
@@ -85,33 +86,17 @@ export default function ReportsPage() {
 
            <div className="bg-white dark:bg-slate-800 shadow rounded-lg p-6 mt-8 transition-colors duration-300">
               <h3 className="text-md font-medium text-gray-800 dark:text-gray-200 mb-4">Daily Breakdown</h3>
-              <div className="overflow-x-auto">
-                 <table className="min-w-full divide-y divide-gray-200 dark:divide-slate-700 transition-colors duration-300">
-                    <thead className="bg-gray-50 dark:bg-slate-900/50">
-                      <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase">Date</th>
-                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-slate-400 uppercase">Sales Count</th>
-                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-slate-400 uppercase">Revenue</th>
-                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-slate-400 uppercase">CGS</th>
-                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-slate-400 uppercase">Gross Profit</th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white dark:bg-slate-800 divide-y divide-gray-200 dark:divide-slate-700 transition-colors duration-300">
-                      {salesReport.data.map((dayData, idx) => (
-                        <tr key={idx} className="hover:bg-gray-50/50 dark:hover:bg-slate-700/50 transition-colors duration-200">
-                          <td className="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">{dayData._id.day}/{dayData._id.month}/{dayData._id.year}</td>
-                          <td className="px-6 py-4 text-sm text-gray-900 dark:text-gray-100 text-right">{dayData.count}</td>
-                          <td className="px-6 py-4 text-sm text-green-600 dark:text-green-400 font-medium text-right">৳{dayData.revenue.toLocaleString()}</td>
-                          <td className="px-6 py-4 text-sm text-red-500 dark:text-red-400 text-right">৳{dayData.purchaseCost.toLocaleString()}</td>
-                          <td className="px-6 py-4 text-sm text-brand dark:text-brand font-medium text-right">৳{(dayData.revenue - dayData.purchaseCost).toLocaleString()}</td>
-                        </tr>
-                      ))}
-                      {salesReport.data.length === 0 && (
-                        <tr><td colSpan="5" className="px-6 py-4 text-center text-gray-500 dark:text-slate-400">No sales in this period.</td></tr>
-                      )}
-                    </tbody>
-                 </table>
-              </div>
+              <DataTable 
+                data={salesReport.data}
+                itemsPerPage={8}
+                columns={[
+                  { header: 'Date', render: (row) => `${row._id.day}/${row._id.month}/${row._id.year}` },
+                  { header: 'Sales Count', render: (row) => <div className="text-right">{row.count}</div> },
+                  { header: 'Revenue', render: (row) => <div className="text-right text-green-600 dark:text-green-400 font-medium">৳{row.revenue.toLocaleString()}</div> },
+                  { header: 'CGS', render: (row) => <div className="text-right text-red-500 dark:text-red-400">৳{row.purchaseCost.toLocaleString()}</div> },
+                  { header: 'Gross Profit', render: (row) => <div className="text-right text-brand font-medium">৳{(row.revenue - row.purchaseCost).toLocaleString()}</div> },
+                ]}
+              />
            </div>
         </div>
       )}
