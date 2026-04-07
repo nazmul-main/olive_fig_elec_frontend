@@ -91,10 +91,10 @@ export default function ReportsPage() {
                 itemsPerPage={8}
                 columns={[
                   { header: 'Date', render: (row) => `${row._id.day}/${row._id.month}/${row._id.year}` },
-                  { header: 'Sales Count', render: (row) => <div className="text-right">{row.count}</div> },
-                  { header: 'Revenue', render: (row) => <div className="text-right text-green-600 dark:text-green-400 font-medium">৳{row.revenue.toLocaleString()}</div> },
-                  { header: 'CGS', render: (row) => <div className="text-right text-red-500 dark:text-red-400">৳{row.purchaseCost.toLocaleString()}</div> },
-                  { header: 'Gross Profit', render: (row) => <div className="text-right text-brand font-medium">৳{(row.revenue - row.purchaseCost).toLocaleString()}</div> },
+                  { header: 'Sales Count', headerClassName: 'text-right', render: (row) => <div className="text-right">{row.count}</div> },
+                  { header: 'Revenue', headerClassName: 'text-right', render: (row) => <div className="text-right text-green-600 dark:text-green-400 font-medium">৳{row.revenue.toLocaleString()}</div> },
+                  { header: 'CGS', headerClassName: 'text-right', render: (row) => <div className="text-right text-red-500 dark:text-red-400">৳{row.purchaseCost.toLocaleString()}</div> },
+                  { header: 'Gross Profit', headerClassName: 'text-right', render: (row) => <div className="text-right text-brand font-medium">৳{(row.revenue - row.purchaseCost).toLocaleString()}</div> },
                 ]}
               />
            </div>

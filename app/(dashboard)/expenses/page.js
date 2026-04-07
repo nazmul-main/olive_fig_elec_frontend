@@ -103,8 +103,8 @@ export default function ExpensesPage() {
     <div>
       <div className="flex justify-between items-center mb-6">
         <div>
-           <h1 className="text-2xl font-semibold text-gray-900">Expenses</h1>
-           <p className="text-sm text-gray-500">This Month: <span className="text-red-500 font-medium">৳{monthlyTotal.toLocaleString()}</span></p>
+           <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">Expenses</h1>
+           <p className="text-sm text-gray-500 dark:text-slate-400">This Month: <span className="text-red-500 font-medium">৳{monthlyTotal.toLocaleString()}</span></p>
         </div>
         {(user?.role === 'admin' || user?.role === 'manager') && (
           <button onClick={() => handleOpenModal()} className="bg-brand text-white px-4 py-2 rounded-md hover:bg-brand-dark transition-colors">
@@ -129,22 +129,22 @@ export default function ExpensesPage() {
       <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={editId ? "Edit Expense" : "Add Expense"}>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700">Title</label>
-            <input type="text" required value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:ring-brand focus:border-brand sm:text-sm" />
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300">Title</label>
+            <input type="text" required value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} className="mt-1 block w-full border border-gray-300 dark:border-slate-600 rounded-md shadow-sm py-2 px-3 focus:ring-brand focus:border-brand sm:text-sm bg-white dark:bg-slate-700 text-gray-900 dark:text-white transition-colors" />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700">Amount (৳)</label>
-              <input type="number" min="0" required value={formData.amount} onChange={e => setFormData({...formData, amount: Number(e.target.value)})} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:ring-brand focus:border-brand sm:text-sm" />
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300">Amount (৳)</label>
+              <input type="number" min="0" required value={formData.amount} onChange={e => setFormData({...formData, amount: Number(e.target.value)})} className="mt-1 block w-full border border-gray-300 dark:border-slate-600 rounded-md shadow-sm py-2 px-3 focus:ring-brand focus:border-brand sm:text-sm bg-white dark:bg-slate-700 text-gray-900 dark:text-white transition-colors" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">Date</label>
-              <input type="date" required value={formData.date} onChange={e => setFormData({...formData, date: e.target.value})} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-4 focus:ring-brand focus:border-brand sm:text-sm" />
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300">Date</label>
+              <input type="date" required value={formData.date} onChange={e => setFormData({...formData, date: e.target.value})} className="mt-1 block w-full border border-gray-300 dark:border-slate-600 rounded-md shadow-sm py-2 px-4 focus:ring-brand focus:border-brand sm:text-sm bg-white dark:bg-slate-700 text-gray-900 dark:text-white transition-colors" />
             </div>
           </div>
           <div>
-             <label className="block text-sm font-medium text-gray-700">Category</label>
-             <select value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:ring-brand focus:border-brand sm:text-sm">
+             <label className="block text-sm font-medium text-gray-700 dark:text-slate-300">Category</label>
+             <select value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})} className="mt-1 block w-full border border-gray-300 dark:border-slate-600 rounded-md shadow-sm py-2 px-3 focus:ring-brand focus:border-brand sm:text-sm bg-white dark:bg-slate-700 text-gray-900 dark:text-white transition-colors">
                <option value="salary">Salary</option>
                <option value="electricity">Electricity</option>
                <option value="rent">Rent</option>
@@ -154,8 +154,8 @@ export default function ExpensesPage() {
              </select>
           </div>
           <div>
-             <label className="block text-sm font-medium text-gray-700">Note (Optional)</label>
-             <textarea value={formData.note} onChange={e => setFormData({...formData, note: e.target.value})} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:ring-brand focus:border-brand sm:text-sm" rows="3"></textarea>
+             <label className="block text-sm font-medium text-gray-700 dark:text-slate-300">Note (Optional)</label>
+             <textarea value={formData.note} onChange={e => setFormData({...formData, note: e.target.value})} className="mt-1 block w-full border border-gray-300 dark:border-slate-600 rounded-md shadow-sm py-2 px-3 focus:ring-brand focus:border-brand sm:text-sm bg-white dark:bg-slate-700 text-gray-900 dark:text-white transition-colors" rows="3"></textarea>
           </div>
           <div className="mt-5">
             <button type="submit" className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-brand text-base font-medium text-white hover:bg-brand-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand sm:text-sm transition-colors">

@@ -29,7 +29,7 @@ export default function DataTable({ columns, data, onEdit, onDelete, onRowClick,
                     <th
                       key={idx}
                       scope="col"
-                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider"
+                      className={`px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider ${col.headerClassName || ''}`}
                     >
                       {col.header}
                     </th>
