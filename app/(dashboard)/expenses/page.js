@@ -74,7 +74,11 @@ export default function ExpensesPage() {
   const confirmDelete = async (password) => {
     try {
       setIsDeleting(true);
-      const { data } = await api.delete(`/expenses/${expenseToDelete._id}`, { data: { password } });
+      const { data } = await api({
+        method: 'delete',
+        url: `/expenses/${expenseToDelete._id}`,
+        data: { password }
+      });
       if (data.success) {
         toast.success('Expense deleted');
         fetchExpenses();

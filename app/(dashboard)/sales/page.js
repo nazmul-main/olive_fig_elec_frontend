@@ -39,7 +39,11 @@ export default function SalesHistoryPage() {
   const confirmDelete = async (password) => {
     try {
       setIsDeleting(true);
-      const { data } = await api.delete(`/sales/${selectedSale._id}`, { data: { password } });
+      const { data } = await api({
+        method: 'delete',
+        url: `/sales/${selectedSale._id}`,
+        data: { password }
+      });
       if (data.success) {
         toast.success(data.message || 'Sale deleted and stock restored');
         fetchSales();

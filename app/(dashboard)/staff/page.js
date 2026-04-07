@@ -59,7 +59,11 @@ export default function StaffPage() {
   const confirmToggle = async (password) => {
     try {
       setIsToggling(true);
-      const { data } = await api.patch(`/auth/users/${userToToggle._id}/toggle`, { password });
+      const { data } = await api({
+        method: 'patch',
+        url: `/auth/users/${userToToggle._id}/toggle`,
+        data: { password }
+      });
       if (data.success) {
         toast.success(data.message);
         fetchUsers();

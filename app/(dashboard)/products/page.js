@@ -71,7 +71,11 @@ export default function ProductsPage() {
   const confirmDelete = async (password) => {
     try {
       setIsDeleting(true);
-      const { data } = await api.delete(`/products/${productToDelete._id}`, { data: { password } });
+      const { data } = await api({
+        method: 'delete',
+        url: `/products/${productToDelete._id}`,
+        data: { password }
+      });
       if (data.success) {
         toast.success('Product deleted');
         fetchProducts();
