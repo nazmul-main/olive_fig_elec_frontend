@@ -63,4 +63,3 @@ export default function DataTable({ columns, data, onEdit, onDelete, onRowClick 
     </div>
   );
 }
-
