@@ -28,17 +28,17 @@ export default function ConfirmDeleteModal({
   return (
     <Modal isOpen={isOpen} onClose={handleClose} title={title}>
       <form onSubmit={handleSubmit} className="space-y-4">
-        <p className="text-sm text-gray-500">
+        <p className="text-sm text-gray-500 dark:text-slate-400">
           {description}
         </p>
         
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Admin Password</label>
+          <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Admin Password</label>
           <input
             type="password"
             required
             autoComplete="current-password"
-            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-brand focus:border-brand"
+            className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-brand focus:border-brand bg-white dark:bg-slate-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-500 transition-colors"
             placeholder="Enter password..."
             value={password}
             onChange={(e) => setPassword(e.target.value)}
@@ -50,7 +50,7 @@ export default function ConfirmDeleteModal({
             type="button"
             onClick={handleClose}
             disabled={loading}
-            className="mt-3 sm:mt-0 w-full sm:w-auto inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand sm:text-sm"
+            className="mt-3 sm:mt-0 w-full sm:w-auto inline-flex justify-center rounded-md border border-gray-300 dark:border-slate-600 shadow-sm px-4 py-2 bg-white dark:bg-slate-700 text-base font-medium text-gray-700 dark:text-slate-200 hover:bg-gray-50 dark:hover:bg-slate-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand sm:text-sm transition-colors"
           >
             Cancel
           </button>

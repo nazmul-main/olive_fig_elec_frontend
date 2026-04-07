@@ -57,8 +57,8 @@ export default function Dashboard() {
       {/* Page Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">Dashboard Overview</h1>
-          <p className="text-gray-500 mt-1.5 flex items-center">
+          <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">Dashboard Overview</h1>
+          <p className="text-gray-500 dark:text-slate-400 mt-1.5 flex items-center">
             <span className="relative flex h-3 w-3 mr-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
@@ -100,9 +100,9 @@ export default function Dashboard() {
       {/* Lists Grid */}
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
         {/* Recent Sales Section */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden ring-1 ring-black ring-opacity-5">
-          <div className="px-6 py-5 border-b border-gray-100 flex items-center justify-between bg-gray-50/30">
-            <h3 className="text-lg font-bold text-gray-900 flex items-center">
+        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden ring-1 ring-black ring-opacity-5 transition-colors duration-300">
+          <div className="px-6 py-5 border-b border-gray-100 dark:border-slate-700 flex items-center justify-between bg-gray-50/30 dark:bg-slate-800/50">
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white flex items-center">
               <ShoppingBag className="mr-2 h-5 w-5 text-brand" />
               Recent Sales
             </h3>
@@ -113,15 +113,15 @@ export default function Dashboard() {
           <div className="px-6">
             <ul className="divide-y divide-gray-100">
               {recentSales?.map(sale => (
-                <li key={sale._id} className="py-4 hover:bg-gray-50/50 -mx-6 px-6 transition-all duration-200 group">
+                <li key={sale._id} className="py-4 hover:bg-gray-50/50 dark:hover:bg-slate-700/50 -mx-6 px-6 transition-all duration-200 group border-b border-gray-100 dark:border-slate-700 last:border-0">
                   <div className="flex items-center space-x-4">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center space-x-2">
-                        <p className="text-sm font-bold text-gray-900 truncate uppercase">
+                        <p className="text-sm font-bold text-gray-900 dark:text-gray-100 truncate uppercase">
                           {sale.invoiceNo}
                         </p>
                       </div>
-                      <p className="text-xs text-gray-500 truncate mt-0.5 flex items-center">
+                      <p className="text-xs text-gray-500 dark:text-slate-400 truncate mt-0.5 flex items-center">
                         <Clock className="w-3 h-3 mr-1" />
                         {new Date(sale.saleDate).toLocaleDateString()} • {sale.customerName}
                       </p>
@@ -145,13 +145,13 @@ export default function Dashboard() {
         </div>
 
         {/* Low Stock Alerts Section */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden ring-1 ring-black ring-opacity-5">
-          <div className="px-6 py-5 border-b border-gray-100 flex items-center justify-between bg-gray-50/30">
-            <h3 className="text-lg font-bold text-gray-900 flex items-center">
+        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden ring-1 ring-black ring-opacity-5 transition-colors duration-300">
+          <div className="px-6 py-5 border-b border-gray-100 dark:border-slate-700 flex items-center justify-between bg-gray-50/30 dark:bg-slate-800/50">
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white flex items-center">
               <AlertTriangle className="mr-2 h-5 w-5 text-amber-500" />
               Low Stock Alerts
             </h3>
-            <span className="bg-amber-100 text-amber-800 text-xs font-bold px-2.5 py-1 rounded-full">
+            <span className="bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-400 text-xs font-bold px-2.5 py-1 rounded-full">
               {lowStockProducts?.length || 0} Critical Items
             </span>
           </div>
@@ -161,8 +161,8 @@ export default function Dashboard() {
                 <li key={prod._id} className="py-4 hover:bg-gray-50/50 -mx-6 px-6 transition-all duration-200">
                   <div className="flex items-center space-x-4">
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-bold text-gray-900 truncate">{prod.name}</p>
-                      <p className="text-xs text-gray-500 truncate mt-0.5">SKU: {prod.sku}</p>
+                      <p className="text-sm font-bold text-gray-900 dark:text-gray-100 truncate">{prod.name}</p>
+                      <p className="text-xs text-gray-500 dark:text-slate-400 truncate mt-0.5">SKU: {prod.sku}</p>
                     </div>
                     <div className="text-right">
                       <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold ${

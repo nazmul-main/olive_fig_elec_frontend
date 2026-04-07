@@ -123,13 +123,13 @@ export default function NewSalePOS() {
 
   if (completedInvoice) {
     return (
-      <div className="max-w-2xl mx-auto bg-white p-6 shadow rounded text-center">
-         <h2 className="text-2xl text-green-600 font-bold mb-4">Sale Completed!</h2>
-         <p className="mb-8 font-medium">Invoice: {completedInvoice.invoiceNo}</p>
+      <div className="max-w-2xl mx-auto bg-white dark:bg-slate-800 p-6 shadow rounded text-center transition-colors duration-300">
+         <h2 className="text-2xl text-green-600 dark:text-green-400 font-bold mb-4">Sale Completed!</h2>
+         <p className="mb-8 font-medium text-gray-700 dark:text-gray-300">Invoice: {completedInvoice.invoiceNo}</p>
          
          <div className="flex justify-center space-x-4 mb-4 no-print">
-            <button onClick={handlePrint} className="bg-indigo-600 text-white px-6 py-2 rounded shadow hover:bg-indigo-700">Print Invoice</button>
-            <button onClick={handleNewSale} className="bg-gray-200 text-gray-800 px-6 py-2 rounded shadow hover:bg-gray-300">New Sale</button>
+            <button onClick={handlePrint} className="bg-indigo-600 dark:bg-brand text-white px-6 py-2 rounded shadow hover:bg-indigo-700 dark:hover:bg-brand-dark transition-colors">Print Invoice</button>
+            <button onClick={handleNewSale} className="bg-gray-200 dark:bg-slate-700 text-gray-800 dark:text-gray-200 px-6 py-2 rounded shadow hover:bg-gray-300 dark:hover:bg-slate-600 transition-colors">New Sale</button>
          </div>
 
          {/* Invisible component that only shows during print */}
@@ -141,25 +141,25 @@ export default function NewSalePOS() {
   return (
     <div className="flex flex-col lg:flex-row gap-6 h-[calc(100vh-8rem)]">
       {/* Product Selection side */}
-      <div className="w-full lg:w-2/3 bg-white shadow rounded-lg p-4 flex flex-col">
+      <div className="w-full lg:w-2/3 bg-white dark:bg-slate-800 shadow rounded-lg p-4 flex flex-col transition-colors duration-300">
         <input 
           type="text" 
           placeholder="Search product by name or SKU..." 
-          className="w-full border border-gray-300 px-4 py-2 rounded focus:ring-brand mb-4"
+          className="w-full border border-gray-300 dark:border-slate-600 px-4 py-2 rounded focus:ring-brand mb-4 bg-white dark:bg-slate-700 text-gray-900 dark:text-white transition-colors"
           value={search}
           onChange={e => setSearch(e.target.value)}
         />
         
         <div className="flex-1 overflow-y-auto grid grid-cols-2 sm:grid-cols-3 gap-4 auto-rows-max p-1">
           {products.map(p => (
-            <div key={p._id} onClick={() => addToCart(p)} className="border rounded p-3 cursor-pointer hover:shadow hover:border-brand transition-all flex flex-col justify-between h-32">
+            <div key={p._id} onClick={() => addToCart(p)} className="border dark:border-slate-700 rounded p-3 cursor-pointer hover:shadow hover:border-brand dark:hover:border-brand transition-all flex flex-col justify-between h-32 bg-gray-50/30 dark:bg-slate-900/10">
               <div>
-                <p className="font-medium text-gray-800 line-clamp-2 text-sm">{p.name}</p>
-                <p className="text-xs text-gray-500 mt-1">{p.sku}</p>
+                <p className="font-medium text-gray-800 dark:text-gray-100 line-clamp-2 text-sm">{p.name}</p>
+                <p className="text-xs text-gray-500 dark:text-slate-400 mt-1">{p.sku}</p>
               </div>
               <div className="flex justify-between items-center mt-2">
-                <span className="font-bold text-indigo-600">৳{p.salePrice}</span>
-                <span className="text-xs px-2 py-1 bg-green-100 text-green-800 rounded-full">{p.stockQuantity} qty</span>
+                <span className="font-bold text-brand dark:text-brand">৳{p.salePrice}</span>
+                <span className="text-xs px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 rounded-full">{p.stockQuantity} qty</span>
               </div>
             </div>
           ))}
@@ -168,8 +168,8 @@ export default function NewSalePOS() {
       </div>
 
       {/* Cart & Checkout Side */}
-      <div className="w-full lg:w-1/3 bg-white shadow rounded-lg p-4 flex flex-col">
-        <h2 className="text-lg font-semibold border-b pb-2">Current Sale</h2>
+      <div className="w-full lg:w-1/3 bg-white dark:bg-slate-800 shadow rounded-lg p-4 flex flex-col transition-colors duration-300">
+        <h2 className="text-lg font-semibold border-b border-gray-100 dark:border-slate-700 pb-2 text-gray-900 dark:text-white">Current Sale</h2>
         
         <div className="flex-1 overflow-y-auto py-4">
           {cart.length === 0 ? (
@@ -177,17 +177,17 @@ export default function NewSalePOS() {
           ) : (
             <div className="space-y-3">
               {cart.map(item => (
-                <div key={item.product} className="flex justify-between items-center p-2 hover:bg-gray-50 rounded">
+                <div key={item.product} className="flex justify-between items-center p-2 hover:bg-gray-50 dark:hover:bg-slate-700 rounded transition-colors">
                   <div className="flex-1">
-                    <p className="text-sm font-medium line-clamp-1">{item.productName}</p>
-                    <p className="text-xs text-gray-500">৳{item.salePrice}</p>
+                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100 line-clamp-1">{item.productName}</p>
+                    <p className="text-xs text-gray-500 dark:text-slate-400">৳{item.salePrice}</p>
                   </div>
                   <div className="flex items-center space-x-2 mx-2">
-                    <button onClick={() => updateQuantity(item.product, -1)} className="w-6 h-6 bg-gray-200 rounded flex items-center justify-center">-</button>
-                    <span className="text-sm w-4 text-center">{item.quantity}</span>
-                    <button onClick={() => updateQuantity(item.product, 1)} className="w-6 h-6 bg-gray-200 rounded flex items-center justify-center">+</button>
+                    <button onClick={() => updateQuantity(item.product, -1)} className="w-6 h-6 bg-gray-200 dark:bg-slate-700 text-gray-800 dark:text-gray-200 rounded flex items-center justify-center hover:bg-gray-300 dark:hover:bg-slate-600">-</button>
+                    <span className="text-sm w-4 text-center text-gray-900 dark:text-white font-medium">{item.quantity}</span>
+                    <button onClick={() => updateQuantity(item.product, 1)} className="w-6 h-6 bg-gray-200 dark:bg-slate-700 text-gray-800 dark:text-gray-200 rounded flex items-center justify-center hover:bg-gray-300 dark:hover:bg-slate-600">+</button>
                   </div>
-                  <div className="text-sm font-medium w-16 text-right">
+                  <div className="text-sm font-medium w-16 text-right text-gray-900 dark:text-white">
                     ৳{item.salePrice * item.quantity}
                   </div>
                   <button onClick={() => removeFromCart(item.product)} className="text-red-500 ml-2">×</button>
@@ -197,29 +197,29 @@ export default function NewSalePOS() {
           )}
         </div>
 
-        <div className="border-t pt-4 space-y-3 text-sm">
+        <div className="border-t border-gray-100 dark:border-slate-700 pt-4 space-y-3 text-sm">
            <div className="grid grid-cols-2 gap-2">
-             <input type="text" placeholder="Customer Name" value={customerName} onChange={e => setCustomerName(e.target.value)} className="border px-2 py-1 rounded w-full" />
-             <input type="text" placeholder="Phone" value={customerPhone} onChange={e => setCustomerPhone(e.target.value)} className="border px-2 py-1 rounded w-full" />
+             <input type="text" placeholder="Customer Name" value={customerName} onChange={e => setCustomerName(e.target.value)} className="border dark:border-slate-600 px-2 py-1 rounded w-full bg-white dark:bg-slate-700 text-gray-900 dark:text-white transition-colors" />
+             <input type="text" placeholder="Phone" value={customerPhone} onChange={e => setCustomerPhone(e.target.value)} className="border dark:border-slate-600 px-2 py-1 rounded w-full bg-white dark:bg-slate-700 text-gray-900 dark:text-white transition-colors" />
            </div>
            
-           <div className="flex justify-between py-1 text-gray-600"><span>Subtotal</span> <span>৳{subtotal}</span></div>
+           <div className="flex justify-between py-1 text-gray-600 dark:text-slate-400"><span>Subtotal</span> <span>৳{subtotal}</span></div>
            
            <div className="flex items-center justify-between">
-              <span className="text-gray-600">Discount (৳)</span>
-              <input type="number" min="0" value={discount} onChange={e => setDiscount(e.target.value)} className="w-20 border px-2 py-1 rounded text-right" />
+              <span className="text-gray-600 dark:text-slate-400">Discount (৳)</span>
+              <input type="number" min="0" value={discount} onChange={e => setDiscount(e.target.value)} className="w-20 border dark:border-slate-600 px-2 py-1 rounded text-right bg-white dark:bg-slate-700 text-gray-900 dark:text-white transition-colors" />
            </div>
            <div className="flex items-center justify-between">
-              <span className="text-gray-600">VAT (%)</span>
-              <input type="number" min="0" value={vat} onChange={e => setVat(e.target.value)} className="w-20 border px-2 py-1 rounded text-right" />
+              <span className="text-gray-600 dark:text-slate-400">VAT (%)</span>
+              <input type="number" min="0" value={vat} onChange={e => setVat(e.target.value)} className="w-20 border dark:border-slate-600 px-2 py-1 rounded text-right bg-white dark:bg-slate-700 text-gray-900 dark:text-white transition-colors" />
            </div>
            
-           <div className="flex justify-between py-2 text-lg font-bold border-y border-dashed mt-2">
-              <span>Grand Total</span>
+           <div className="flex justify-between py-2 text-lg font-bold border-y border-dashed border-gray-200 dark:border-slate-700 mt-2">
+              <span className="text-gray-900 dark:text-white">Grand Total</span>
               <span className="text-brand">৳{grandTotal.toFixed(2)}</span>
            </div>
 
-           <select value={paymentMethod} onChange={e => setPaymentMethod(e.target.value)} className="w-full border rounded p-2 mt-2">
+           <select value={paymentMethod} onChange={e => setPaymentMethod(e.target.value)} className="w-full border dark:border-slate-600 rounded p-2 mt-2 bg-white dark:bg-slate-700 text-gray-900 dark:text-white transition-colors">
              <option value="cash">Cash</option>
              <option value="bkash">bKash</option>
              <option value="nagad">Nagad</option>

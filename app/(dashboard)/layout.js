@@ -36,7 +36,7 @@ export default function DashboardLayout({ children }) {
   }
 
   return (
-    <div className="flex bg-gray-50 h-screen overflow-hidden">
+    <div className="flex bg-gray-50 dark:bg-slate-900 h-screen overflow-hidden transition-colors duration-300">
       {/* Sidebar for Desktop & Mobile */}
       <Sidebar isOpen={isSidebarOpen} setIsOpen={setSidebarOpen} />
       
