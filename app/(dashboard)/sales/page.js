@@ -2,11 +2,17 @@
 import { useState, useEffect } from 'react';
 import api from '@/lib/axios';
 import DataTable from '@/components/ui/DataTable';
+import ConfirmDeleteModal from '@/components/ui/ConfirmDeleteModal';
 import toast from 'react-hot-toast';
+import useAuthStore from '@/store/useAuthStore';
 
 export default function SalesHistoryPage() {
   const [sales, setSales] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [selectedSale, setSelectedSale] = useState(null);
+  const { user } = useAuthStore();
 
   useEffect(() => {
     fetchSales();
@@ -22,6 +28,27 @@ export default function SalesHistoryPage() {
       toast.error('Failed to load sales history');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDeleteClick = (sale) => {
+    setSelectedSale(sale);
+    setShowDeleteModal(true);
+  };
+
+  const confirmDelete = async (password) => {
+    try {
+      setIsDeleting(true);
+      const { data } = await api.delete(`/sales/${selectedSale._id}`, { data: { password } });
+      if (data.success) {
+        toast.success(data.message || 'Sale deleted and stock restored');
+        fetchSales();
+        setShowDeleteModal(false);
+      }
+    } catch (e) {
+      toast.error(e.response?.data?.message || 'Failed to delete sale');
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -41,9 +68,25 @@ export default function SalesHistoryPage() {
         <h1 className="text-2xl font-semibold text-gray-900">Sales History</h1>
       </div>
 
-      {loading ? <p>Loading sales...</p> : (
-        <DataTable columns={columns} data={sales} />
+      {loading ? (
+        <div className="flex justify-center py-10">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand"></div>
+        </div>
+      ) : (
+        <DataTable 
+          columns={columns} 
+          data={sales} 
+          onDelete={user?.role === 'admin' ? handleDeleteClick : null}
+        />
       )}
+
+      <ConfirmDeleteModal
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        onConfirm={confirmDelete}
+        loading={isDeleting}
+        title={`Delete Invoice ${selectedSale?.invoiceNo}?`}
+      />
     </div>
   );
 }

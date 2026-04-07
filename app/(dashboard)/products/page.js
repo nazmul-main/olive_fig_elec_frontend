@@ -3,14 +3,20 @@ import { useState, useEffect } from 'react';
 import api from '@/lib/axios';
 import DataTable from '@/components/ui/DataTable';
 import Modal from '@/components/ui/Modal';
+import ConfirmDeleteModal from '@/components/ui/ConfirmDeleteModal';
 import toast from 'react-hot-toast';
+import useAuthStore from '@/store/useAuthStore';
 
 export default function ProductsPage() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [productToDelete, setProductToDelete] = useState(null);
   const [formData, setFormData] = useState({ name: '', sku: '', brand: '', category: '', purchasePrice: 0, salePrice: 0, stockQuantity: 0, supplierName: '' });
   const [editId, setEditId] = useState(null);
+  const { user } = useAuthStore();
 
   useEffect(() => {
     fetchProducts();
@@ -57,15 +63,24 @@ export default function ProductsPage() {
     }
   };
 
-  const handleDelete = async (product) => {
-    if (window.confirm(`Are you sure you want to delete ${product.name}?`)) {
-      try {
-        await api.delete(`/products/${product._id}`);
+  const handleDeleteClick = (product) => {
+    setProductToDelete(product);
+    setShowDeleteModal(true);
+  };
+
+  const confirmDelete = async (password) => {
+    try {
+      setIsDeleting(true);
+      const { data } = await api.delete(`/products/${productToDelete._id}`, { data: { password } });
+      if (data.success) {
         toast.success('Product deleted');
         fetchProducts();
-      } catch (e) {
-        toast.error('Error deleting product');
+        setShowDeleteModal(false);
       }
+    } catch (e) {
+      toast.error(e.response?.data?.message || 'Error deleting product');
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -82,11 +97,24 @@ export default function ProductsPage() {
     <div>
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-semibold text-gray-900">Products</h1>
-        <button onClick={() => handleOpenModal()} className="bg-brand text-white px-4 py-2 rounded-md hover:bg-indigo-700">Add Product</button>
+        {(user?.role === 'admin' || user?.role === 'manager') && (
+          <button onClick={() => handleOpenModal()} className="bg-brand text-white px-4 py-2 rounded-md hover:bg-brand-dark transition-colors">
+            Add Product
+          </button>
+        )}
       </div>
 
-      {loading ? <p>Loading products...</p> : (
-        <DataTable columns={columns} data={products} onEdit={handleOpenModal} onDelete={handleDelete} />
+      {loading ? (
+        <div className="flex justify-center py-10">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand"></div>
+        </div>
+      ) : (
+        <DataTable 
+          columns={columns} 
+          data={products} 
+          onEdit={(user?.role === 'admin' || user?.role === 'manager') ? handleOpenModal : null} 
+          onDelete={user?.role === 'admin' ? handleDeleteClick : null} 
+        />
       )}
 
       <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={editId ? "Edit Product" : "New Product"}>
@@ -126,12 +154,20 @@ export default function ProductsPage() {
             </div>
           </div>
           <div className="mt-5 sm:mt-6">
-            <button type="submit" className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-brand text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand sm:text-sm">
+            <button type="submit" className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-brand text-base font-medium text-white hover:bg-brand-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand sm:text-sm transition-colors">
               {editId ? 'Save Changes' : 'Add Product'}
             </button>
           </div>
         </form>
       </Modal>
+
+      <ConfirmDeleteModal
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        onConfirm={confirmDelete}
+        loading={isDeleting}
+        title={`Delete Product: ${productToDelete?.name}?`}
+      />
     </div>
   );
 }
