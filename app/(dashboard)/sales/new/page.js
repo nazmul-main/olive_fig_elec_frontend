@@ -26,7 +26,7 @@ export default function NewSalePOS() {
 
   const fetchProducts = async () => {
     try {
-      const { data } = await api.get(`/products?search=${search}&limit=10`);
+      const { data } = await api.get(`/products?search=${search}&limit=100`);
       if (data.success) {
          setProducts(data.products.filter(p => p.stockQuantity > 0)); // Only show in-stock
       }

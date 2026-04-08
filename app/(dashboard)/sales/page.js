@@ -5,6 +5,8 @@ import DataTable from '@/components/ui/DataTable';
 import ConfirmDeleteModal from '@/components/ui/ConfirmDeleteModal';
 import toast from 'react-hot-toast';
 import useAuthStore from '@/store/useAuthStore';
+import { Printer } from 'lucide-react';
+import { generateInvoicePDF } from '@/lib/pdfGenerator';
 
 export default function SalesHistoryPage() {
   const [sales, setSales] = useState([]);
@@ -20,7 +22,7 @@ export default function SalesHistoryPage() {
 
   const fetchSales = async () => {
     try {
-      const { data } = await api.get('/sales');
+      const { data } = await api.get('/sales?limit=100');
       if (data.success) {
         setSales(data.sales);
       }
@@ -29,6 +31,10 @@ export default function SalesHistoryPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handlePrint = (sale) => {
+    generateInvoicePDF(sale);
   };
 
   const handleDeleteClick = (sale) => {
@@ -60,10 +66,21 @@ export default function SalesHistoryPage() {
     { header: 'Invoice No', accessor: 'invoiceNo' },
     { header: 'Date', render: (row) => new Date(row.saleDate).toLocaleDateString() },
     { header: 'Customer', render: (row) => `${row.customerName} ${row.customerPhone ? '- ' + row.customerPhone : ''}` },
-    { header: 'Items', render: (row) => row.items.reduce((acc, curr) => acc + curr.quantity, 0) },
     { header: 'Grand Total', render: (row) => `৳${row.grandTotal.toLocaleString()}` },
     { header: 'Method', render: (row) => <span className="capitalize">{row.paymentMethod}</span> },
     { header: 'Sold By', render: (row) => row.soldBy?.name },
+    { 
+      header: 'Actions', 
+      render: (row) => (
+        <button 
+          onClick={() => handlePrint(row)}
+          className="p-2 text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-900/30 rounded-lg transition-colors"
+          title="Print Invoice"
+        >
+          <Printer size={18} />
+        </button>
+      )
+    },
   ];
 
   return (

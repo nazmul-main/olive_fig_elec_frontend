@@ -24,7 +24,7 @@ export default function ProductsPage() {
 
   const fetchProducts = async () => {
     try {
-      const { data } = await api.get('/products');
+      const { data } = await api.get('/products?limit=100');
       if (data.success) {
         setProducts(data.products);
       }
