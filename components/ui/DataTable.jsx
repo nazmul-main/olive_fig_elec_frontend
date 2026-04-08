@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-
+import { Trash2, Edit } from 'lucide-react';
 export default function DataTable({ columns, data, onEdit, onDelete, onRowClick, itemsPerPage = 8 }) {
   const [currentPage, setCurrentPage] = useState(1);
 
@@ -51,16 +51,26 @@ export default function DataTable({ columns, data, onEdit, onDelete, onRowClick,
                     ))}
                     {(onEdit || onDelete) && (
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        {onEdit && (
-                          <button onClick={(e) => { e.stopPropagation(); onEdit(row); }} className="text-brand hover:text-brand-dark dark:text-brand dark:hover:text-white mr-4 transition-colors">
-                            Edit
-                          </button>
-                        )}
-                        {onDelete && (
-                          <button onClick={(e) => { e.stopPropagation(); onDelete(row); }} className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 transition-colors">
-                            Delete
-                          </button>
-                        )}
+                        <div className="flex justify-end items-center space-x-3">
+                          {onEdit && (
+                            <button 
+                              onClick={(e) => { e.stopPropagation(); onEdit(row); }} 
+                              className="text-brand hover:text-brand-dark bg-indigo-50 hover:bg-indigo-100 dark:text-brand dark:hover:text-indigo-300 dark:bg-indigo-500/10 dark:hover:bg-indigo-500/20 p-1.5 rounded-md transition-colors flex items-center justify-center"
+                              title="Edit"
+                            >
+                              <Edit size={18} />
+                            </button>
+                          )}
+                          {onDelete && (
+                            <button 
+                              onClick={(e) => { e.stopPropagation(); onDelete(row); }} 
+                              className="text-red-600 hover:text-red-800 bg-red-50 hover:bg-red-100 dark:text-red-400 dark:hover:text-red-300 dark:bg-red-500/10 dark:hover:bg-red-500/20 p-1.5 rounded-md transition-colors flex items-center justify-center"
+                              title="Delete"
+                            >
+                              <Trash2 size={18} />
+                            </button>
+                          )}
+                        </div>
                       </td>
                     )}
                   </tr>
