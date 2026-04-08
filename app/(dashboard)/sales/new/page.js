@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from 'react';
 import api from '@/lib/axios';
 import toast from 'react-hot-toast';
 import InvoicePrint from '@/components/Invoice/InvoicePrint';
+import { Trash2 } from 'lucide-react';
 
 export default function NewSalePOS() {
   const [products, setProducts] = useState([]);
@@ -190,7 +191,13 @@ export default function NewSalePOS() {
                   <div className="text-sm font-medium w-16 text-right text-gray-900 dark:text-white">
                     ৳{item.salePrice * item.quantity}
                   </div>
-                  <button onClick={() => removeFromCart(item.product)} className="text-red-500 ml-2">×</button>
+                  <button 
+                    onClick={() => removeFromCart(item.product)} 
+                    className="text-red-500 hover:text-red-700 bg-red-50 dark:bg-red-500/10 hover:bg-red-100 dark:hover:bg-red-500/20 p-2 rounded-md ml-2 transition-colors flex items-center justify-center"
+                    title="Remove item"
+                  >
+                    <Trash2 size={20} />
+                  </button>
                 </div>
               ))}
             </div>
