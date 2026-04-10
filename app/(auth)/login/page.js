@@ -114,24 +114,24 @@ export default function LoginPage() {
       </div>
 
       {/* Ultra-Compact Minimalist Login Card */}
-      <div className="w-full max-w-[340px] bg-slate-900/40 backdrop-blur-3xl rounded-[2.5rem] shadow-[0_40px_120px_rgba(0,0,0,0.9)] border border-white/10 p-8 sm:p-9 transition-all duration-500 hover:border-brand/40 group relative z-10 mx-4">
-        <div className="text-center mb-6 flex flex-col items-center">
-          <div className="relative mb-5">
+      <div className="w-full max-w-[400px] bg-slate-900/40 backdrop-blur-3xl rounded-[3rem] shadow-[0_40px_120px_rgba(0,0,0,0.9)] border border-white/10 p-10 sm:p-12 transition-all duration-500 hover:border-brand/40 group relative z-10 mx-4">
+        <div className="text-center mb-8 flex flex-col items-center">
+          <div className="relative mb-6">
              <div className="absolute inset-0 bg-brand/30 blur-2xl rounded-full"></div>
-             <img className="h-16 sm:h-20 w-auto object-contain relative transition-transform duration-500 group-hover:scale-105" src="/logo.png" alt="Logo" />
+             <img className="h-24 sm:h-28 w-auto object-contain relative transition-transform duration-500 group-hover:scale-105" src="/logo.png" alt="Logo" />
           </div>
-          <h1 className="text-xl sm:text-2xl font-black text-white tracking-[0.15em] uppercase drop-shadow-2xl">Login</h1>
+          <h1 className="text-2xl sm:text-3xl font-black text-white tracking-[0.15em] uppercase drop-shadow-2xl">Login</h1>
         </div>
 
-        <form className="space-y-4" onSubmit={handleLogin}>
+        <form className="space-y-5" onSubmit={handleLogin}>
           <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-white/30 group-focus-within:text-brand transition-colors">
-              <Mail size={16} />
+            <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none text-white/30 group-focus-within:text-brand transition-colors">
+              <Mail size={20} />
             </div>
             <input
               type="email"
               required
-              className="block w-full pl-11 pr-4 py-3 border border-white/5 rounded-xl bg-black/40 text-white text-sm focus:ring-2 focus:ring-brand focus:border-transparent transition-all outline-none placeholder:text-white/20 focus:bg-black/60"
+              className="block w-full pl-14 pr-5 py-4 border border-white/5 rounded-2xl bg-black/40 text-white text-base focus:ring-2 focus:ring-brand focus:border-transparent transition-all outline-none placeholder:text-white/20 focus:bg-black/60"
               placeholder="Email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -139,13 +139,13 @@ export default function LoginPage() {
           </div>
 
           <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-white/30 group-focus-within:text-brand transition-colors">
-              <Lock size={16} />
+            <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none text-white/30 group-focus-within:text-brand transition-colors">
+              <Lock size={20} />
             </div>
             <input
               type="password"
               required
-              className="block w-full pl-11 pr-4 py-3 border border-white/5 rounded-xl bg-black/40 text-white text-sm focus:ring-2 focus:ring-brand focus:border-transparent transition-all outline-none placeholder:text-white/20 focus:bg-black/60"
+              className="block w-full pl-14 pr-5 py-4 border border-white/5 rounded-2xl bg-black/40 text-white text-base focus:ring-2 focus:ring-brand focus:border-transparent transition-all outline-none placeholder:text-white/20 focus:bg-black/60"
               placeholder="Password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -155,7 +155,7 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full py-3 px-4 bg-brand hover:bg-brand-dark text-white rounded-xl font-bold text-sm uppercase tracking-widest transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-center shadow-xl shadow-brand/20 mt-2 overflow-hidden relative group"
+            className="w-full py-4 px-5 bg-brand hover:bg-brand-dark text-white rounded-2xl font-bold text-base uppercase tracking-widest transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-center shadow-xl shadow-brand/20 mt-4 overflow-hidden relative group"
           >
             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:animate-[shimmer_2s_infinite]"></div>
             {isLoading ? "Verifying..." : "Sign In"}
