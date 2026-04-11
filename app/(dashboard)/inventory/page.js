@@ -54,7 +54,7 @@ export default function InventoryPage() {
 
   const columns = [
     { header: 'Date', render: (row) => new Date(row.createdAt).toLocaleString() },
-    { header: 'Product', render: (row) => `${row.productName} (${row.product?.sku})` },
+    { header: 'Product', render: (row) => `${row.productName} (${row.product?.code})` },
     { header: 'Type', render: (row) => (
        <span className={`px-2 py-1 rounded-full text-xs font-medium ${row.type === 'IN' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
          {row.type}

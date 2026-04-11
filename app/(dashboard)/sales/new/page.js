@@ -47,7 +47,7 @@ export default function NewSalePOS() {
       setCart([...cart, { 
         product: product._id, 
         productName: product.name, 
-        sku: product.sku, 
+        code: product.code, 
         salePrice: product.salePrice, 
         maxStock: product.stockQuantity, 
         quantity: 1 
@@ -145,7 +145,7 @@ export default function NewSalePOS() {
       <div className="w-full lg:w-2/3 bg-white dark:bg-slate-800 shadow rounded-lg p-4 flex flex-col transition-colors duration-300">
         <input 
           type="text" 
-          placeholder="Search product by name or SKU..." 
+          placeholder="Search product by name or Code..." 
           className="w-full border border-gray-300 dark:border-slate-600 px-4 py-2 rounded focus:ring-brand mb-4 bg-white dark:bg-slate-700 text-gray-900 dark:text-white transition-colors"
           value={search}
           onChange={e => setSearch(e.target.value)}
@@ -156,7 +156,7 @@ export default function NewSalePOS() {
             <div key={p._id} onClick={() => addToCart(p)} className="border dark:border-slate-700 rounded p-3 cursor-pointer hover:shadow hover:border-brand dark:hover:border-brand transition-all flex flex-col justify-between h-32 bg-gray-50/30 dark:bg-slate-900/10">
               <div>
                 <p className="font-medium text-gray-800 dark:text-gray-100 line-clamp-2 text-sm">{p.name}</p>
-                <p className="text-xs text-gray-500 dark:text-slate-400 mt-1">{p.sku}</p>
+                <p className="text-xs text-gray-500 dark:text-slate-400 mt-1">{p.code}</p>
               </div>
               <div className="flex justify-between items-center mt-2">
                 <span className="font-bold text-brand dark:text-brand">৳{p.salePrice}</span>

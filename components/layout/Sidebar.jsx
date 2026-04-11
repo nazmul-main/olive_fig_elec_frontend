@@ -13,7 +13,9 @@ import {
   Users, 
   BarChart3, 
   LogOut,
-  X 
+  X,
+  Truck,
+  PackagePlus
 } from 'lucide-react';
 
 export default function Sidebar({ isOpen, setIsOpen }) {
@@ -26,6 +28,8 @@ export default function Sidebar({ isOpen, setIsOpen }) {
     { name: 'POS (New Sale)', href: '/sales/new', icon: ShoppingCart, roles: ['admin', 'manager', 'salesman'] },
     { name: 'Sales History', href: '/sales', icon: History, roles: ['admin', 'manager', 'salesman'] },
     { name: 'Inventory', href: '/inventory', icon: Warehouse, roles: ['admin', 'manager'] },
+    { name: 'Suppliers', href: '/suppliers', icon: Truck, roles: ['admin', 'manager'] },
+    { name: 'Purchases', href: '/purchases', icon: PackagePlus, roles: ['admin', 'manager'] },
     { name: 'Expenses', href: '/expenses', icon: Wallet, roles: ['admin', 'manager'] },
     { name: 'Staff Management', href: '/staff', icon: Users, roles: ['admin'] },
     { name: 'Reports', href: '/reports', icon: BarChart3, roles: ['admin', 'manager'] },

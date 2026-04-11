@@ -162,7 +162,7 @@ export default function Dashboard() {
                   <div className="flex items-center space-x-4">
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-bold text-gray-900 dark:text-gray-100 truncate">{prod.name}</p>
-                      <p className="text-xs text-gray-500 dark:text-slate-400 truncate mt-0.5">SKU: {prod.sku}</p>
+                      <p className="text-xs text-gray-500 dark:text-slate-400 truncate mt-0.5">Code: {prod.code}</p>
                     </div>
                     <div className="text-right">
                       <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold ${

@@ -14,7 +14,7 @@ export default function ProductsPage() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [productToDelete, setProductToDelete] = useState(null);
-  const [formData, setFormData] = useState({ name: '', sku: '', brand: '', category: '', purchasePrice: 0, salePrice: 0, stockQuantity: 0, supplierName: '' });
+  const [formData, setFormData] = useState({ name: '', code: '', brand: '', category: '', purchasePrice: 0, salePrice: 0, stockQuantity: 0, supplierName: '' });
   const [editId, setEditId] = useState(null);
   const { user } = useAuthStore();
 
@@ -41,7 +41,7 @@ export default function ProductsPage() {
       setFormData(product);
     } else {
       setEditId(null);
-      setFormData({ name: '', sku: '', brand: '', category: '', purchasePrice: 0, salePrice: 0, stockQuantity: 0, supplierName: '' });
+      setFormData({ name: '', code: '', brand: '', category: '', purchasePrice: 0, salePrice: 0, stockQuantity: 0, supplierName: '' });
     }
     setIsModalOpen(true);
   };
@@ -89,7 +89,7 @@ export default function ProductsPage() {
   };
 
   const columns = [
-    { header: 'SKU', accessor: 'sku' },
+    { header: 'Code', accessor: 'code' },
     { header: 'Name', accessor: 'name' },
     { header: 'Brand', accessor: 'brand' },
     { header: 'Category', accessor: 'category' },
@@ -129,8 +129,8 @@ export default function ProductsPage() {
               <input type="text" required value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} className="mt-1 block w-full border border-gray-300 dark:border-slate-600 rounded-md shadow-sm py-2 px-3 focus:ring-brand focus:border-brand sm:text-sm bg-white dark:bg-slate-700 text-gray-900 dark:text-white transition-colors" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300">SKU</label>
-              <input type="text" required value={formData.sku} onChange={(e) => setFormData({...formData, sku: e.target.value})} className="mt-1 block w-full border border-gray-300 dark:border-slate-600 rounded-md shadow-sm py-2 px-3 focus:ring-brand focus:border-brand sm:text-sm bg-white dark:bg-slate-700 text-gray-900 dark:text-white transition-colors" />
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300">Code</label>
+              <input type="text" required value={formData.code} onChange={(e) => setFormData({...formData, code: e.target.value})} className="mt-1 block w-full border border-gray-300 dark:border-slate-600 rounded-md shadow-sm py-2 px-3 focus:ring-brand focus:border-brand sm:text-sm bg-white dark:bg-slate-700 text-gray-900 dark:text-white transition-colors" />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-slate-300">Brand</label>

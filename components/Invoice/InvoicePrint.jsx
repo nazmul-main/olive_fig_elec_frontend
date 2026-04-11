@@ -50,7 +50,7 @@ const InvoicePrint = forwardRef(({ invoiceData }, ref) => {
           <tbody>
             {invoiceData.items?.map((item, idx) => (
               <tr key={idx} className="border-b border-gray-200">
-                <td className="py-2">{item.productName} <br/><span className="text-xs text-gray-500">{item.sku}</span></td>
+                <td className="py-2">{item.productName} <br/><span className="text-xs text-gray-500">{item.code}</span></td>
                 <td className="py-2">{item.quantity}</td>
                 <td className="py-2 text-right">৳{item.salePrice}</td>
                 <td className="py-2 text-right">৳{item.subtotal}</td>
