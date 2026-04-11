@@ -27,6 +27,7 @@ export default function Sidebar({ isOpen, setIsOpen }) {
     { name: 'Products', href: '/products', icon: Box, roles: ['admin', 'manager', 'salesman'] },
     { name: 'POS (New Sale)', href: '/sales/new', icon: ShoppingCart, roles: ['admin', 'manager', 'salesman'] },
     { name: 'Sales History', href: '/sales', icon: History, roles: ['admin', 'manager', 'salesman'] },
+    { name: 'Customer Ledger', href: '/customers', icon: Users, roles: ['admin', 'manager', 'salesman'] },
     { name: 'Inventory', href: '/inventory', icon: Warehouse, roles: ['admin', 'manager'] },
     { name: 'Suppliers', href: '/suppliers', icon: Truck, roles: ['admin', 'manager'] },
     { name: 'Purchases', href: '/purchases', icon: PackagePlus, roles: ['admin', 'manager'] },

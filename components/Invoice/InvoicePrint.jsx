@@ -28,8 +28,10 @@ const InvoicePrint = forwardRef(({ invoiceData }, ref) => {
         <div className="flex justify-between mb-8">
           <div>
             <p className="font-bold">Bill To:</p>
-            <p>{invoiceData.customerName || 'Walk-in Customer'}</p>
-            <p>{invoiceData.customerPhone || ''}</p>
+            <p className="font-medium text-lg">{invoiceData.customerName || 'Walk-in Customer'}</p>
+            <p>Phone: {invoiceData.customerPhone || 'N/A'}</p>
+            {invoiceData.customerEmail && <p>Email: {invoiceData.customerEmail}</p>}
+            {invoiceData.customerAddress && <p>Address: {invoiceData.customerAddress}</p>}
           </div>
           <div className="text-right">
             <p><span className="font-bold">Invoice #:</span> {invoiceData.invoiceNo}</p>
@@ -50,7 +52,17 @@ const InvoicePrint = forwardRef(({ invoiceData }, ref) => {
           <tbody>
             {invoiceData.items?.map((item, idx) => (
               <tr key={idx} className="border-b border-gray-200">
-                <td className="py-2">{item.productName} <br/><span className="text-xs text-gray-500">{item.code}</span></td>
+                <td className="py-2">
+                  <div className="font-medium">{item.productName}</div>
+                  <div className="text-[10px] text-gray-500 uppercase">{item.code}</div>
+                  {item.serialNumbers?.length > 0 && (
+                    <div className="mt-1 flex flex-wrap gap-1">
+                      {item.serialNumbers.map((s, idx) => (
+                        <span key={idx} className="bg-gray-100 px-1 py-0.5 rounded text-[10px] border border-gray-200">SN: {s}</span>
+                      ))}
+                    </div>
+                  )}
+                </td>
                 <td className="py-2">{item.quantity}</td>
                 <td className="py-2 text-right">৳{item.salePrice}</td>
                 <td className="py-2 text-right">৳{item.subtotal}</td>

@@ -67,6 +67,8 @@ export default function SalesHistoryPage() {
     { header: 'Date', render: (row) => new Date(row.saleDate).toLocaleDateString() },
     { header: 'Customer', render: (row) => `${row.customerName} ${row.customerPhone ? '- ' + row.customerPhone : ''}` },
     { header: 'Grand Total', render: (row) => `৳${row.grandTotal.toLocaleString()}` },
+    { header: 'Paid', render: (row) => <span className="text-green-600 font-medium">৳{(row.paidAmount || 0).toLocaleString()}</span> },
+    { header: 'Due', render: (row) => <span className={`${row.dueAmount > 0 ? 'text-red-500' : 'text-gray-400'}`}>৳{(row.dueAmount || 0).toLocaleString()}</span> },
     { header: 'Method', render: (row) => <span className="capitalize">{row.paymentMethod}</span> },
     { header: 'Sold By', render: (row) => row.soldBy?.name },
     { 

@@ -13,10 +13,14 @@ export default function NewSalePOS() {
   const [cart, setCart] = useState([]);
   const [customerName, setCustomerName] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
+  const [customerEmail, setCustomerEmail] = useState('');
+  const [customerAddress, setCustomerAddress] = useState('');
   const [discount, setDiscount] = useState(0);
   const [vat, setVat] = useState(0);
+  const [paidAmount, setPaidAmount] = useState(0);
   const [paymentMethod, setPaymentMethod] = useState('cash');
   const [note, setNote] = useState('');
+  const [isNewCustomer, setIsNewCustomer] = useState(true);
 
   const [loading, setLoading] = useState(false);
   const [completedInvoice, setCompletedInvoice] = useState(null);
@@ -24,6 +28,32 @@ export default function NewSalePOS() {
   useEffect(() => {
     fetchProducts();
   }, [search]);
+
+  // Auto-fill customer data when phone number is entered
+  useEffect(() => {
+    if (customerPhone.length >= 11) {
+      const timer = setTimeout(async () => {
+        try {
+          const { data } = await api.get(`/customers?search=${customerPhone}`);
+          if (data.success && data.customers.length > 0) {
+            const cust = data.customers[0];
+            if (cust.phone === customerPhone) {
+              setCustomerName(cust.name);
+              setCustomerEmail(cust.email || '');
+              setCustomerAddress(cust.address || '');
+              setIsNewCustomer(false);
+              toast.success('Existing customer found!');
+            }
+          } else {
+            setIsNewCustomer(true);
+          }
+        } catch (e) {
+          console.error('Error fetching customer', e);
+        }
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [customerPhone]);
 
   const fetchProducts = async () => {
     try {
@@ -37,45 +67,43 @@ export default function NewSalePOS() {
   };
 
   const addToCart = (product) => {
-    const existing = cart.find(item => item.product === product._id);
-    if (existing) {
-      if (existing.quantity >= product.stockQuantity) {
-        return toast.error('Insufficient stock');
-      }
-      setCart(cart.map(item => item.product === product._id ? { ...item, quantity: item.quantity + 1 } : item));
-    } else {
-      setCart([...cart, { 
-        product: product._id, 
-        productName: product.name, 
-        code: product.code, 
-        salePrice: product.salePrice, 
-        maxStock: product.stockQuantity, 
-        quantity: 1 
-      }]);
+    // Check total stock for this product in cart
+    const totalInCart = cart.filter(item => item.product === product._id).length;
+    if (totalInCart >= product.stockQuantity) {
+      return toast.error('Insufficient stock');
     }
+
+    setCart([...cart, { 
+      cartId: `${product._id}-${Date.now()}-${Math.random()}`, // Unique ID for this row
+      product: product._id, 
+      productName: product.name, 
+      code: product.code, 
+      salePrice: product.salePrice, 
+      quantity: 1,
+      serialNumbers: [] 
+    }]);
   };
 
-  const updateQuantity = (id, delta) => {
-    setCart(cart.map(item => {
-      if (item.product === id) {
-        const newQty = item.quantity + delta;
-        if (newQty > item.maxStock) {
-           toast.error('Cannot exceed available stock');
-           return item;
-        }
-        if (newQty < 1) return item;
-        return { ...item, quantity: newQty };
-      }
-      return item;
-    }));
-  };
+  const removeFromCart = (cartId) => setCart(cart.filter(item => item.cartId !== cartId));
 
-  const removeFromCart = (id) => setCart(cart.filter(item => item.product !== id));
+  const updateSerials = (cartId, serialsString) => {
+    // For single-unit rows, we just store whatever is typed in the specific box
+    // But we'll keep it as an array for logic consistency
+    const serialsArray = serialsString.split(',').map(s => s.trim()).filter(s => s !== '');
+    setCart(cart.map(item => item.cartId === cartId ? { ...item, serialNumbers: serialsArray } : item));
+  };
 
   // Calculations
   const subtotal = cart.reduce((acc, item) => acc + (item.salePrice * item.quantity), 0);
   const vatAmount = ((subtotal - Number(discount)) * Number(vat)) / 100;
   const grandTotal = subtotal - Number(discount) + vatAmount;
+
+  // Sync paidAmount with grandTotal if it hasn't been manually touched or is 0
+  useEffect(() => {
+    if (paidAmount === 0 || paidAmount > grandTotal) {
+       // setPaidAmount(grandTotal); // removed to avoid infinite loop or UX frustration
+    }
+  }, [grandTotal]);
 
   const handleCheckout = async () => {
     if (cart.length === 0) return toast.error('Cart is empty');
@@ -83,11 +111,18 @@ export default function NewSalePOS() {
     setLoading(true);
     try {
       const payload = {
-        customerName,
+        customerName: customerName || 'Walk-in Customer',
         customerPhone,
-        items: cart.map(i => ({ product: i.product, quantity: i.quantity })),
+        customerEmail,
+        customerAddress,
+        items: cart.map(i => ({ 
+            product: i.product, 
+            quantity: i.quantity,
+            serialNumbers: i.serialNumbers 
+        })),
         discount: Number(discount),
         vat: Number(vat),
+        paidAmount: Number(paidAmount),
         paymentMethod,
         note
       };
@@ -102,9 +137,13 @@ export default function NewSalePOS() {
         setCart([]);
         setCustomerName('');
         setCustomerPhone('');
+        setCustomerEmail('');
+        setCustomerAddress('');
         setDiscount(0);
         setVat(0);
+        setPaidAmount(0);
         setNote('');
+        setIsNewCustomer(true);
       }
     } catch (e) {
       toast.error(e.response?.data?.message || 'Checkout failed');
@@ -178,26 +217,31 @@ export default function NewSalePOS() {
           ) : (
             <div className="space-y-3">
               {cart.map(item => (
-                <div key={item.product} className="flex justify-between items-center p-2 hover:bg-gray-50 dark:hover:bg-slate-700 rounded transition-colors">
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100 line-clamp-1">{item.productName}</p>
-                    <p className="text-xs text-gray-500 dark:text-slate-400">৳{item.salePrice}</p>
+                <div key={item.cartId} className="p-3 border dark:border-slate-700 rounded-lg space-y-2 bg-gray-50/50 dark:bg-slate-900/20">
+                  <div className="flex justify-between items-center">
+                    <div className="flex-1">
+                      <p className="text-sm font-bold text-gray-900 dark:text-gray-100 line-clamp-1">{item.productName}</p>
+                      <p className="text-xs text-brand">৳{item.salePrice}</p>
+                    </div>
+                    
+                    <button 
+                      onClick={() => removeFromCart(item.cartId)} 
+                      className="text-red-500 hover:text-red-700 bg-red-50 dark:bg-red-500/10 hover:bg-red-100 dark:hover:bg-red-500/20 p-2 rounded-md ml-2 transition-colors flex items-center justify-center"
+                    >
+                      <Trash2 size={16} />
+                    </button>
                   </div>
-                  <div className="flex items-center space-x-2 mx-2">
-                    <button onClick={() => updateQuantity(item.product, -1)} className="w-6 h-6 bg-gray-200 dark:bg-slate-700 text-gray-800 dark:text-gray-200 rounded flex items-center justify-center hover:bg-gray-300 dark:hover:bg-slate-600">-</button>
-                    <span className="text-sm w-4 text-center text-gray-900 dark:text-white font-medium">{item.quantity}</span>
-                    <button onClick={() => updateQuantity(item.product, 1)} className="w-6 h-6 bg-gray-200 dark:bg-slate-700 text-gray-800 dark:text-gray-200 rounded flex items-center justify-center hover:bg-gray-300 dark:hover:bg-slate-600">+</button>
+                  
+                  {/* Serial Number Input */}
+                  <div className="mt-1">
+                    <input 
+                      type="text" 
+                      placeholder="Serial/IMEI Number" 
+                      className="w-full text-xs border dark:border-slate-600 px-2 py-1.5 rounded bg-white dark:bg-slate-700 text-gray-900 dark:text-white border-brand/50 focus:ring-1 focus:ring-brand outline-none"
+                      value={item.serialNumbers.join(', ')}
+                      onChange={(e) => updateSerials(item.cartId, e.target.value)}
+                    />
                   </div>
-                  <div className="text-sm font-medium w-16 text-right text-gray-900 dark:text-white">
-                    ৳{item.salePrice * item.quantity}
-                  </div>
-                  <button 
-                    onClick={() => removeFromCart(item.product)} 
-                    className="text-red-500 hover:text-red-700 bg-red-50 dark:bg-red-500/10 hover:bg-red-100 dark:hover:bg-red-500/20 p-2 rounded-md ml-2 transition-colors flex items-center justify-center"
-                    title="Remove item"
-                  >
-                    <Trash2 size={20} />
-                  </button>
                 </div>
               ))}
             </div>
@@ -205,9 +249,42 @@ export default function NewSalePOS() {
         </div>
 
         <div className="border-t border-gray-100 dark:border-slate-700 pt-4 space-y-3 text-sm">
-           <div className="grid grid-cols-2 gap-2">
-             <input type="text" placeholder="Customer Name" value={customerName} onChange={e => setCustomerName(e.target.value)} className="border dark:border-slate-600 px-2 py-1 rounded w-full bg-white dark:bg-slate-700 text-gray-900 dark:text-white transition-colors" />
-             <input type="text" placeholder="Phone" value={customerPhone} onChange={e => setCustomerPhone(e.target.value)} className="border dark:border-slate-600 px-2 py-1 rounded w-full bg-white dark:bg-slate-700 text-gray-900 dark:text-white transition-colors" />
+           <div className="space-y-2">
+             <div className="relative">
+               <input 
+                 type="text" 
+                 placeholder="Phone Number (Auto-fill)" 
+                 value={customerPhone} 
+                 onChange={e => setCustomerPhone(e.target.value)} 
+                 className={`border px-2 py-2 rounded w-full bg-white dark:bg-slate-700 text-gray-900 dark:text-white transition-all ${!isNewCustomer ? 'border-green-500 ring-1 ring-green-500' : 'dark:border-slate-600'}`} 
+               />
+               {!isNewCustomer && <span className="absolute right-2 top-2 text-[10px] bg-green-500 text-white px-1 rounded">Old Customer</span>}
+             </div>
+             
+             <input 
+               type="text" 
+               placeholder="Customer Name" 
+               value={customerName} 
+               onChange={e => setCustomerName(e.target.value)} 
+               className="border dark:border-slate-600 px-2 py-2 rounded w-full bg-white dark:bg-slate-700 text-gray-900 dark:text-white transition-colors" 
+             />
+
+             <div className="grid grid-cols-2 gap-2">
+               <input 
+                 type="email" 
+                 placeholder="Email (Optional)" 
+                 value={customerEmail} 
+                 onChange={e => setCustomerEmail(e.target.value)} 
+                 className="border dark:border-slate-600 px-2 py-1 rounded w-full bg-white dark:bg-slate-700 text-gray-900 dark:text-white text-xs" 
+               />
+               <input 
+                 type="text" 
+                 placeholder="Address" 
+                 value={customerAddress} 
+                 onChange={e => setCustomerAddress(e.target.value)} 
+                 className="border dark:border-slate-600 px-2 py-1 rounded w-full bg-white dark:bg-slate-700 text-gray-900 dark:text-white text-xs" 
+               />
+             </div>
            </div>
            
            <div className="flex justify-between py-1 text-gray-600 dark:text-slate-400"><span>Subtotal</span> <span>৳{subtotal}</span></div>
@@ -225,6 +302,21 @@ export default function NewSalePOS() {
               <span className="text-gray-900 dark:text-white">Grand Total</span>
               <span className="text-brand">৳{grandTotal.toFixed(2)}</span>
            </div>
+
+           <div className="flex items-center justify-between bg-yellow-50 dark:bg-yellow-900/10 p-2 rounded">
+              <span className="font-bold text-gray-700 dark:text-yellow-500">Paid Amount</span>
+              <div className="flex items-center space-x-2">
+                 <button onClick={() => setPaidAmount(grandTotal)} className="text-[10px] bg-gray-200 dark:bg-slate-600 px-1 rounded">Full</button>
+                 <input type="number" min="0" value={paidAmount} onChange={e => setPaidAmount(e.target.value)} className="w-24 border border-yellow-300 dark:border-yellow-700 px-2 py-1 rounded text-right font-bold bg-white dark:bg-slate-700 text-gray-900 dark:text-white transition-colors" />
+              </div>
+           </div>
+
+           {grandTotal - paidAmount > 0 && (
+             <div className="flex justify-between text-red-500 font-medium px-2 italic">
+               <span>Balance Due:</span>
+               <span>৳{(grandTotal - paidAmount).toFixed(2)}</span>
+             </div>
+           )}
 
            <select value={paymentMethod} onChange={e => setPaymentMethod(e.target.value)} className="w-full border dark:border-slate-600 rounded p-2 mt-2 bg-white dark:bg-slate-700 text-gray-900 dark:text-white transition-colors">
              <option value="cash">Cash</option>
