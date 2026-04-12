@@ -1,54 +1,115 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import api from '@/lib/axios';
 import DataTable from '@/components/ui/DataTable';
-import Modal from '@/components/ui/Modal';
 import toast from 'react-hot-toast';
+import { Warehouse, History, FileUp, Plus, Calendar } from 'lucide-react';
+import * as XLSX from 'xlsx';
 
 export default function InventoryPage() {
   const [history, setHistory] = useState([]);
-  const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
   
-  // Stock Adjustment Modal
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [formData, setFormData] = useState({ productId: '', quantity: 0, type: 'IN', reason: 'purchase', note: '' });
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
 
   useEffect(() => {
-    fetchInventory();
-    fetchProducts();
-  }, []);
+    setPage(1);
+    setHistory([]);
+    setHasMore(true);
+    fetchInventory(1, true); // initial load
+  }, [startDate, endDate]);
 
-  const fetchInventory = async () => {
+  const fetchInventory = async (pageNumber = 1, isInitial = false) => {
     try {
-      const { data } = await api.get('/dashboard/inventory');
-      if (data.success) setHistory(data.history);
+      if (isInitial) setLoading(true);
+      else setLoadingMore(true);
+
+      const { data } = await api.get('/dashboard/inventory', {
+        params: { limit: 20, page: pageNumber, startDate: startDate || undefined, endDate: endDate || undefined }
+      });
+
+      if (data.success) {
+        if (isInitial) {
+          setHistory(data.history);
+        } else {
+          setHistory(prev => [...prev, ...data.history]);
+        }
+        setHasMore(data.history.length === 20); // if returned less than limit, no more data
+      }
     } catch (e) {
-      toast.error('Failed to load inventory history');
+      toast.error('Failed to load history');
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
   };
 
-  const fetchProducts = async () => {
-     try {
-       const { data } = await api.get('/products');
-       if (data.success) setProducts(data.products);
-     } catch (e) {}
-  };
+  // Intersection Observer to trigger more loads
+  const observer = useRef();
+  const lastElementRef = useCallback(node => {
+    if (loading || loadingMore) return;
+    if (observer.current) observer.current.disconnect();
+    
+    observer.current = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting && hasMore) {
+        setPage(prev => {
+           const nextPage = prev + 1;
+           fetchInventory(nextPage);
+           return nextPage;
+        });
+      }
+    });
 
-  const handleAdjustStock = async (e) => {
-    e.preventDefault();
-    if (!formData.productId || formData.quantity <= 0) return toast.error('Invalid data');
+    if (node) observer.current.observe(node);
+  }, [loading, loadingMore, hasMore, startDate, endDate]);
+
+
+
+  const handleExportExcel = async () => {
+    const toastId = toast.loading('Preparing full report...');
     try {
-      await api.post('/dashboard/stock-adjustment', formData);
-      toast.success('Stock adjusted successfully');
-      setIsModalOpen(false);
-      fetchInventory();
-      // Reset form
-      setFormData({ productId: '', quantity: 0, type: 'IN', reason: 'purchase', note: '' });
+      // Fetch all data from the backend for the current filters
+      // We pass limit: 0 to get all records matching the filters
+      const { data } = await api.get('/dashboard/inventory', {
+        params: { 
+          limit: 0, 
+          startDate: startDate || undefined, 
+          endDate: endDate || undefined 
+        }
+      });
+
+      if (!data.success || !data.history) {
+        throw new Error('Failed to fetch data');
+      }
+
+      const reportData = data.history.length > 0 ? data.history : history;
+
+      const exportData = reportData.map(row => ({
+        'Date/Time': new Date(row.createdAt).toLocaleString(),
+        'Product Name': row.productName,
+        'Product Code': row.product?.code || 'N/A',
+        'Type': row.type,
+        'Quantity': row.quantity,
+        'Reason': row.reason.toUpperCase(),
+        'Previous Stock': row.previousStock,
+        'New Stock': row.newStock,
+        'Note': row.note || '',
+        'Updated By': row.updatedBy?.name || 'N/A'
+      }));
+
+      const worksheet = XLSX.utils.json_to_sheet(exportData);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Inventory Movement");
+
+      XLSX.writeFile(workbook, `Inventory_History_${new Date().toISOString().split('T')[0]}.xlsx`);
+      toast.success('Stock report downloaded!', { id: toastId });
     } catch (e) {
-      toast.error(e.response?.data?.message || 'Error adjusting stock');
+      console.error('Export Error:', e);
+      toast.error('Failed to export report', { id: toastId });
     }
   };
 
@@ -67,55 +128,89 @@ export default function InventoryPage() {
   ];
 
   return (
-    <div>
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-semibold text-gray-900">Inventory Movement</h1>
-        <button onClick={() => setIsModalOpen(true)} className="bg-brand text-white px-4 py-2 rounded-md hover:bg-indigo-700">Manual Stock Adjustment</button>
+    <div className="space-y-6">
+      <div className="bg-white dark:bg-slate-800 p-5 md:p-6 rounded-3xl border dark:border-slate-700 shadow-xl shadow-gray-200/40 dark:shadow-none transition-all">
+        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-indigo-500/10 text-indigo-600 rounded-2xl flex items-center justify-center shrink-0">
+               <Warehouse size={24} />
+            </div>
+            <div>
+              <h1 className="text-xl md:text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tight leading-none">Stock Movement</h1>
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">Audit stock changes and history</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 w-full lg:w-auto">
+            {/* Date Filters Group - Compact for Mobile */}
+            <div className="flex flex-1 items-center bg-gray-50 dark:bg-slate-900/50 rounded-2xl border dark:border-slate-700 p-0.5 sm:p-1 overflow-hidden">
+              <div className="flex items-center gap-1.5 px-2 sm:px-3 py-1.5 flex-1">
+                 <span className="text-[8px] sm:text-[9px] font-black text-gray-400 uppercase tracking-widest">From</span>
+                 <input 
+                   type="date" 
+                   value={startDate} 
+                   onChange={e => setStartDate(e.target.value)} 
+                   className="bg-transparent text-[10px] sm:text-[11px] font-bold outline-none dark:text-white w-full min-w-[75px]" 
+                 />
+              </div>
+              <div className="w-px h-5 bg-gray-200 dark:bg-slate-700"></div>
+              <div className="flex items-center gap-1.5 px-2 sm:px-3 py-1.5 flex-1">
+                 <span className="text-[8px] sm:text-[9px] font-black text-gray-400 uppercase tracking-widest">To</span>
+                 <input 
+                   type="date" 
+                   value={endDate} 
+                   onChange={e => setEndDate(e.target.value)} 
+                   className="bg-transparent text-[10px] sm:text-[11px] font-bold outline-none dark:text-white w-full min-w-[75px]" 
+                 />
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-2 shrink-0">
+              {(startDate || endDate) && (
+                <button 
+                  onClick={() => { setStartDate(''); setEndDate(''); }} 
+                  className="text-[10px] font-black text-red-500 uppercase px-1 hover:underline transition-all hidden sm:block"
+                >
+                  Clear
+                </button>
+              )}
+
+              <button 
+                onClick={handleExportExcel}
+                disabled={history.length === 0}
+                title="Export Report"
+                className="w-10 h-10 flex items-center justify-center bg-green-600 hover:bg-green-700 text-white rounded-xl transition-all shadow-lg shadow-green-600/20 disabled:opacity-50 shrink-0"
+              >
+                <FileUp size={18} />
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
 
-      {loading ? <p>Loading history...</p> : (
-        <DataTable columns={columns} data={history} />
+      {loading ? (
+        <div className="flex justify-center py-20">
+          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-brand"></div>
+        </div>
+      ) : (
+        <div className="bg-white dark:bg-slate-800 rounded-3xl border dark:border-slate-700 shadow-xl overflow-hidden transition-all text-xs">
+          <DataTable columns={columns} data={history} disablePagination={true} />
+          
+          {/* Target for Infinite Scroll */}
+          <div ref={lastElementRef} className="h-10 flex items-center justify-center">
+             {loadingMore && (
+               <div className="flex items-center gap-2 text-gray-400">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-brand"></div>
+                  <span className="font-bold uppercase tracking-widest text-[10px]">Loading more...</span>
+               </div>
+             )}
+             {!hasMore && history.length > 0 && (
+               <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest bg-gray-50 dark:bg-slate-900/50 px-4 py-1 rounded-full">End of records</span>
+             )}
+          </div>
+        </div>
       )}
 
-      {/* Adjust Stock Modal */}
-      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Manual Stock Adjustment">
-        <form onSubmit={handleAdjustStock} className="space-y-4">
-          <div>
-             <label className="block text-sm font-medium text-gray-700">Product</label>
-             <select required value={formData.productId} onChange={e => setFormData({...formData, productId: e.target.value})} className="mt-1 w-full border border-gray-300 rounded p-2">
-                <option value="">Select a product...</option>
-                {products.map(p => (
-                   <option key={p._id} value={p._id}>{p.name} (Stock: {p.stockQuantity})</option>
-                ))}
-             </select>
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-             <div>
-               <label className="block text-sm font-medium text-gray-700">Type</label>
-               <select value={formData.type} onChange={e => setFormData({...formData, type: e.target.value})} className="mt-1 w-full border border-gray-300 rounded p-2">
-                 <option value="IN">ADD (IN)</option>
-                 <option value="OUT">DEDUCT (OUT)</option>
-               </select>
-             </div>
-             <div>
-               <label className="block text-sm font-medium text-gray-700">Quantity</label>
-               <input type="number" min="1" required value={formData.quantity} onChange={e => setFormData({...formData, quantity: Number(e.target.value)})} className="mt-1 w-full border border-gray-300 rounded p-2" />
-             </div>
-          </div>
-          <div>
-             <label className="block text-sm font-medium text-gray-700">Reason</label>
-             <select value={formData.reason} onChange={e => setFormData({...formData, reason: e.target.value})} className="mt-1 w-full border border-gray-300 rounded p-2">
-               <option value="purchase">Purchase (New Stock)</option>
-               <option value="adjustment">Manual Adjustment</option>
-               <option value="return">Customer Return</option>
-               <option value="damage">Damage / Defect</option>
-             </select>
-          </div>
-          <div className="mt-5">
-            <button type="submit" className="w-full bg-brand text-white py-2 rounded">Submit</button>
-          </div>
-        </form>
-      </Modal>
     </div>
   );
 }

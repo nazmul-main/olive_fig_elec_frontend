@@ -6,6 +6,8 @@ import Modal from '@/components/ui/Modal';
 import ConfirmDeleteModal from '@/components/ui/ConfirmDeleteModal';
 import toast from 'react-hot-toast';
 import useAuthStore from '@/store/useAuthStore';
+import { FileUp, Package, Plus, Trash2, Box, Search } from 'lucide-react';
+import * as XLSX from 'xlsx';
 
 export default function ProductsPage() {
   const [products, setProducts] = useState([]);
@@ -63,6 +65,32 @@ export default function ProductsPage() {
     }
   };
 
+  const handleExportExcel = () => {
+    try {
+      const exportData = products.map(p => ({
+        'Code': p.code,
+        'Name': p.name,
+        'Brand': p.brand,
+        'Category': p.category,
+        'Purchase Price': p.purchasePrice,
+        'Sale Price': p.salePrice,
+        'Stock Qty': p.stockQuantity,
+        'Stock Value (Cost)': p.purchasePrice * p.stockQuantity,
+        'Stock Value (Sale)': p.salePrice * p.stockQuantity,
+        'Supplier': p.supplierName || 'N/A'
+      }));
+
+      const worksheet = XLSX.utils.json_to_sheet(exportData);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Current Stock");
+
+      XLSX.writeFile(workbook, `Stock_Inventory_${new Date().toISOString().split('T')[0]}.xlsx`);
+      toast.success('Current inventory report downloaded!');
+    } catch (e) {
+      toast.error('Failed to export Excel');
+    }
+  };
+
   const handleDeleteClick = (product) => {
     setProductToDelete(product);
     setShowDeleteModal(true);
@@ -98,27 +126,53 @@ export default function ProductsPage() {
   ];
 
   return (
-    <div>
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">Products</h1>
-        {(user?.role === 'admin' || user?.role === 'manager') && (
-          <button onClick={() => handleOpenModal()} className="bg-brand text-white px-4 py-2 rounded-md hover:bg-brand-dark transition-colors">
-            Add Product
+    <div className="space-y-6">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white dark:bg-slate-800 p-6 rounded-3xl border dark:border-slate-700 shadow-xl shadow-gray-200/40 dark:shadow-none transition-all">
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 bg-blue-500/10 text-blue-600 rounded-2xl flex items-center justify-center">
+             <Package size={24} />
+          </div>
+          <div>
+            <h1 className="text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tight">Product Inventory</h1>
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-0.5">
+               Total Items: <span className="text-blue-600">{products.length}</span>
+            </p>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-3">
+          <button 
+            onClick={handleExportExcel}
+            disabled={products.length === 0}
+            className="flex items-center gap-2 px-6 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-lg shadow-green-600/20 disabled:opacity-50"
+          >
+            <FileUp size={16} /> Export Stock
           </button>
-        )}
+          
+          {(user?.role === 'admin' || user?.role === 'manager') && (
+            <button 
+              onClick={() => handleOpenModal()} 
+              className="flex items-center gap-2 px-6 py-2.5 bg-brand hover:bg-brand-dark text-white rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-lg shadow-brand/20"
+            >
+              <Plus size={16} /> Add Product
+            </button>
+          )}
+        </div>
       </div>
 
       {loading ? (
-        <div className="flex justify-center py-10">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand"></div>
+        <div className="flex justify-center py-20">
+          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-brand"></div>
         </div>
       ) : (
-        <DataTable 
-          columns={columns} 
-          data={products} 
-          onEdit={(user?.role === 'admin' || user?.role === 'manager') ? handleOpenModal : null} 
-          onDelete={user?.role === 'admin' ? handleDeleteClick : null} 
-        />
+        <div className="bg-white dark:bg-slate-800 rounded-3xl border dark:border-slate-700 shadow-xl overflow-hidden transition-all text-sm font-medium">
+          <DataTable 
+            columns={columns} 
+            data={products} 
+            onEdit={(user?.role === 'admin' || user?.role === 'manager') ? handleOpenModal : null} 
+            onDelete={user?.role === 'admin' ? handleDeleteClick : null} 
+          />
+        </div>
       )}
 
       <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={editId ? "Edit Product" : "New Product"}>

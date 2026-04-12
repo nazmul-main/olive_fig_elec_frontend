@@ -3,8 +3,9 @@ import { useState, useEffect } from 'react';
 import api from '@/lib/axios';
 import toast from 'react-hot-toast';
 import useAuthStore from '@/store/useAuthStore';
-import { PackagePlus, Search, Plus, Trash2, ArrowRight, ArrowLeft, Building2, Smartphone, MapPin, CheckCircle2, ShoppingCart } from 'lucide-react';
+import { PackagePlus, Search, Plus, Trash2, ArrowRight, ArrowLeft, Building2, Smartphone, MapPin, CheckCircle2, ShoppingCart, FileUp } from 'lucide-react';
 import Link from 'next/link';
+import * as XLSX from 'xlsx';
 
 export default function PurchasesPage() {
   const { user } = useAuthStore();
@@ -13,6 +14,8 @@ export default function PurchasesPage() {
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [filterSupplier, setFilterSupplier] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   
   // Multi-step form state
   const [currentStep, setCurrentStep] = useState(1); // 1: Supplier, 2: Items, 3: Summary
@@ -35,12 +38,19 @@ export default function PurchasesPage() {
     purchaseDate: new Date().toISOString().split('T')[0]
   });
 
-  useEffect(() => { fetchData(); }, []);
+  useEffect(() => { fetchData(); }, [startDate, endDate]);
 
   const fetchData = async () => {
     try {
+      setLoading(true);
       const [pRes, sRes] = await Promise.all([
-        api.get('/purchases?limit=50'),
+        api.get('/purchases', { 
+            params: { 
+                limit: 500, 
+                startDate: startDate || undefined, 
+                endDate: endDate || undefined 
+            } 
+        }),
         api.get('/suppliers'),
       ]);
       if (pRes.data.success) setPurchases(pRes.data.purchases);
@@ -97,6 +107,35 @@ export default function PurchasesPage() {
       toast.error(e.response?.data?.message || 'Error recording purchase');
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleExportExcel = () => {
+    try {
+      const exportData = purchases.map(p => ({
+        'Date': new Date(p.purchaseDate).toLocaleDateString(),
+        'Supplier': p.supplierName,
+        'Brand': p.brand,
+        'Category': p.category,
+        'Product': p.productName,
+        'Code': p.productCode,
+        'Quantity': p.quantity,
+        'Purchase Price': p.purchasePrice,
+        'Sale Price': p.salePrice,
+        'Total Amount': p.totalAmount,
+        'Paid': p.paidAmount,
+        'Due': p.dueAmount,
+        'Recorded By': p.createdBy?.name || 'N/A'
+      }));
+
+      const worksheet = XLSX.utils.json_to_sheet(exportData);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Purchase History");
+
+      XLSX.writeFile(workbook, `Purchase_Report_${new Date().toISOString().split('T')[0]}.xlsx`);
+      toast.success('Excel report downloaded!');
+    } catch (e) {
+      toast.error('Failed to export Excel');
     }
   };
 
@@ -375,17 +414,41 @@ export default function PurchasesPage() {
         {/* Purchase History Table - FULL WIDTH NOW */}
         <div className="lg:col-span-12">
           <div className="bg-white dark:bg-slate-800 rounded-3xl border dark:border-slate-700 shadow-xl overflow-hidden mt-6">
-            <div className="p-6 border-b dark:border-slate-700 flex items-center justify-between gap-3 flex-wrap bg-gray-50/50 dark:bg-slate-800/50">
+            <div className="p-6 border-b dark:border-slate-700 flex flex-col md:flex-row items-center justify-between gap-4 bg-gray-50/50 dark:bg-slate-800/50">
               <h2 className="text-xl font-black text-gray-900 dark:text-white uppercase tracking-tight">Purchase History</h2>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Filter by supplier..."
-                  value={filterSupplier}
-                  onChange={(e) => setFilterSupplier(e.target.value)}
-                  className="pl-9 pr-4 py-2 text-sm border-transparent bg-white dark:bg-slate-700 rounded-2xl shadow-sm focus:ring-2 focus:ring-brand/20 outline-none w-64"
-                />
+              
+              <div className="flex flex-wrap items-center gap-3">
+                <div className="flex items-center gap-2 bg-white dark:bg-slate-700 px-3 py-1.5 rounded-xl border dark:border-slate-600 shadow-sm">
+                   <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">From</span>
+                   <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="bg-transparent text-[10px] font-bold outline-none dark:text-white" />
+                </div>
+                <div className="flex items-center gap-2 bg-white dark:bg-slate-700 px-3 py-1.5 rounded-xl border dark:border-slate-600 shadow-sm">
+                   <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">To</span>
+                   <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className="bg-transparent text-[10px] font-bold outline-none dark:text-white" />
+                </div>
+                
+                {(startDate || endDate) && (
+                  <button onClick={() => { setStartDate(''); setEndDate(''); }} className="text-[9px] font-black text-red-500 uppercase px-2 hover:underline">Clear</button>
+                )}
+
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Search supplier..."
+                    value={filterSupplier}
+                    onChange={(e) => setFilterSupplier(e.target.value)}
+                    className="pl-9 pr-4 py-1.5 text-xs border-transparent bg-white dark:bg-slate-700 rounded-xl shadow-sm focus:ring-2 focus:ring-brand/20 outline-none w-48"
+                  />
+                </div>
+
+                <button 
+                  onClick={handleExportExcel}
+                  disabled={purchases.length === 0}
+                  className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-lg shadow-green-600/20 disabled:opacity-50"
+                >
+                  <FileUp size={14} /> Export
+                </button>
               </div>
             </div>
             {loading ? (

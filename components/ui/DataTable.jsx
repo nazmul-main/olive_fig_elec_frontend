@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import { Trash2, Edit } from 'lucide-react';
-export default function DataTable({ columns, data, onEdit, onDelete, onRowClick, itemsPerPage = 8 }) {
+export default function DataTable({ columns, data, onEdit, onDelete, onRowClick, itemsPerPage = 8, disablePagination = false }) {
   const [currentPage, setCurrentPage] = useState(1);
 
   // Pagination logic
-  const totalPages = Math.ceil(data.length / itemsPerPage);
+  const totalPages = disablePagination ? 0 : Math.ceil(data.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
-  const currentData = data.slice(startIndex, endIndex);
+  const currentData = disablePagination ? data : data.slice(startIndex, endIndex);
 
   const goToNextPage = () => {
     if (currentPage < totalPages) setCurrentPage(currentPage + 1);

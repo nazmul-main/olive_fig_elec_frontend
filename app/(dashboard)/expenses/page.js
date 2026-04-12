@@ -6,6 +6,8 @@ import Modal from '@/components/ui/Modal';
 import ConfirmDeleteModal from '@/components/ui/ConfirmDeleteModal';
 import toast from 'react-hot-toast';
 import useAuthStore from '@/store/useAuthStore';
+import { Printer, FileUp, Plus, Trash2, Calendar, Wallet } from 'lucide-react';
+import * as XLSX from 'xlsx';
 
 export default function ExpensesPage() {
   const [expenses, setExpenses] = useState([]);
@@ -15,6 +17,8 @@ export default function ExpensesPage() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [expenseToDelete, setExpenseToDelete] = useState(null);
   const [monthlyTotal, setMonthlyTotal] = useState(0);
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
 
   const [formData, setFormData] = useState({ title: '', amount: 0, category: 'others', date: new Date().toISOString().split('T')[0], note: '' });
   const [editId, setEditId] = useState(null);
@@ -22,11 +26,14 @@ export default function ExpensesPage() {
 
   useEffect(() => {
     fetchExpenses();
-  }, []);
+  }, [startDate, endDate]);
 
   const fetchExpenses = async () => {
     try {
-      const { data } = await api.get('/expenses');
+      setLoading(true);
+      const { data } = await api.get('/expenses', {
+        params: { startDate: startDate || undefined, endDate: endDate || undefined, limit: 100 }
+      });
       if (data.success) {
         setExpenses(data.expenses);
         setMonthlyTotal(data.monthlyTotal);
@@ -66,6 +73,28 @@ export default function ExpensesPage() {
     }
   };
 
+  const handleExportExcel = () => {
+    try {
+      const exportData = expenses.map(exp => ({
+        'Date': new Date(exp.date).toLocaleDateString(),
+        'Title': exp.title,
+        'Category': exp.category.toUpperCase(),
+        'Amount': exp.amount,
+        'Added By': exp.addedBy?.name || 'N/A',
+        'Note': exp.note || ''
+      }));
+
+      const worksheet = XLSX.utils.json_to_sheet(exportData);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Expenses");
+
+      XLSX.writeFile(workbook, `Expenses_Report_${new Date().toISOString().split('T')[0]}.xlsx`);
+      toast.success('Expense report downloaded!');
+    } catch (e) {
+      toast.error('Failed to export Excel');
+    }
+  };
+
   const handleDeleteClick = (exp) => {
     setExpenseToDelete(exp);
     setShowDeleteModal(true);
@@ -100,30 +129,70 @@ export default function ExpensesPage() {
   ];
 
   return (
-    <div>
-      <div className="flex justify-between items-center mb-6">
-        <div>
-           <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">Expenses</h1>
-           <p className="text-sm text-gray-500 dark:text-slate-400">This Month: <span className="text-red-500 font-medium">৳{monthlyTotal.toLocaleString()}</span></p>
+    <div className="space-y-6">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white dark:bg-slate-800 p-6 rounded-3xl border dark:border-slate-700 shadow-xl shadow-gray-200/40 dark:shadow-none transition-all">
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 bg-red-500/10 text-red-600 rounded-2xl flex items-center justify-center">
+             <Wallet size={24} />
+          </div>
+          <div>
+            <h1 className="text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tight">Financial Expenses</h1>
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-0.5">
+               Total: <span className="text-red-500">৳{monthlyTotal.toLocaleString()}</span> (Current Month)
+            </p>
+          </div>
         </div>
-        {(user?.role === 'admin' || user?.role === 'manager') && (
-          <button onClick={() => handleOpenModal()} className="bg-brand text-white px-4 py-2 rounded-md hover:bg-brand-dark transition-colors">
-            Add Expense
-          </button>
-        )}
+
+        <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+          <div className="flex items-center gap-2 bg-gray-50 dark:bg-slate-900/50 px-3 py-1.5 rounded-xl border dark:border-slate-700">
+             <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">From</span>
+             <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="bg-transparent text-[10px] font-bold outline-none dark:text-white" />
+          </div>
+          <div className="flex items-center gap-2 bg-gray-50 dark:bg-slate-900/50 px-3 py-1.5 rounded-xl border dark:border-slate-700">
+             <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">To</span>
+             <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className="bg-transparent text-[10px] font-bold outline-none dark:text-white" />
+          </div>
+          
+          {(startDate || endDate) && (
+            <button onClick={() => { setStartDate(''); setEndDate(''); }} className="text-[10px] font-black text-red-500 uppercase px-2 hover:underline transition-all">Clear</button>
+          )}
+
+          <div className="w-px h-6 bg-gray-200 dark:bg-slate-700 hidden md:block"></div>
+
+          <div className="flex items-center gap-2">
+            <button 
+              onClick={handleExportExcel}
+              disabled={expenses.length === 0}
+              className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-lg shadow-green-600/20 disabled:opacity-50"
+            >
+              <FileUp size={14} /> Export
+            </button>
+            
+            {(user?.role === 'admin' || user?.role === 'manager') && (
+              <button 
+                onClick={() => handleOpenModal()} 
+                className="flex items-center gap-2 px-4 py-2 bg-brand hover:bg-brand-dark text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-lg shadow-brand/20"
+              >
+                <Plus size={14} /> Add New
+              </button>
+            )}
+          </div>
+        </div>
       </div>
 
       {loading ? (
-        <div className="flex justify-center py-10">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand"></div>
+        <div className="flex justify-center py-20">
+          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-brand"></div>
         </div>
       ) : (
-        <DataTable 
-          columns={columns} 
-          data={expenses} 
-          onEdit={(user?.role === 'admin' || user?.role === 'manager') ? handleOpenModal : null} 
-          onDelete={user?.role === 'admin' ? handleDeleteClick : null} 
-        />
+        <div className="bg-white dark:bg-slate-800 rounded-3xl border dark:border-slate-700 shadow-xl overflow-hidden transition-all">
+          <DataTable 
+            columns={columns} 
+            data={expenses} 
+            onEdit={(user?.role === 'admin' || user?.role === 'manager') ? handleOpenModal : null} 
+            onDelete={user?.role === 'admin' ? handleDeleteClick : null} 
+          />
+        </div>
       )}
 
       <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={editId ? "Edit Expense" : "Add Expense"}>
