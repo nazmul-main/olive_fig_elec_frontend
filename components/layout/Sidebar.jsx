@@ -81,6 +81,7 @@ export default function Sidebar({ isOpen, setIsOpen }) {
       icon: Users,
       links: [
         { name: 'Staff Management', href: '/staff', icon: Users, roles: ['admin'] },
+        { name: 'System Settings', href: '/settings', icon: LayoutDashboard, roles: ['admin'] },
       ]
     }
   ];

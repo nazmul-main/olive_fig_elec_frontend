@@ -111,15 +111,18 @@ export default function NewSalePOS() {
   const vatAmount = ((subtotal - Number(discount)) * Number(vat)) / 100;
   const grandTotal = subtotal - Number(discount) + vatAmount;
 
-  // Sync paidAmount with grandTotal if it hasn't been manually touched or is 0
+  // Sync paidAmount with grandTotal if discount reduces the total below what is already paid
   useEffect(() => {
-    if (paidAmount === 0 || paidAmount > grandTotal) {
-       // setPaidAmount(grandTotal); // removed to avoid infinite loop or UX frustration
+    if (paidAmount > grandTotal) {
+       setPaidAmount(grandTotal > 0 ? grandTotal : 0); 
     }
   }, [grandTotal]);
 
   const handleCheckout = async () => {
     if (cart.length === 0) return toast.error('Cart is empty');
+    if (!customerPhone || !customerName || !customerAddress) {
+      return toast.error('Phone, Name, and Address are required!');
+    }
     
     setLoading(true);
     try {
@@ -311,72 +314,101 @@ export default function NewSalePOS() {
         </div>
 
         {/* Right Side: Sidebar - STICKY IN VIEWPORT */}
-        <div className="lg:w-[30%] xl:w-[25%] flex flex-col overflow-y-auto lg:overflow-hidden custom-scrollbar bg-white dark:bg-slate-800 rounded-xl shadow-sm border dark:border-slate-700">
-           {/* Simple Title */}
-           <div className="px-3 py-2.5 border-b dark:border-slate-700 bg-gray-50/30 dark:bg-slate-800/50 flex items-center justify-between sticky top-0 z-10">
+        <div className="lg:w-[30%] xl:w-[25%] flex flex-col overflow-y-auto custom-scrollbar bg-white dark:bg-slate-800 rounded-xl shadow-sm border dark:border-slate-700">
+           <div className="px-3 py-2.5 border-b dark:border-slate-700 bg-white dark:bg-slate-800 flex items-center justify-between sticky top-0 z-10">
               <span className="text-[10px] font-black text-gray-900 dark:text-white uppercase tracking-wider">Transaction Summary</span>
               {!isNewCustomer && <span className="bg-green-100 text-green-600 text-[8px] font-black px-1.5 py-0.5 rounded uppercase leading-none">Registered</span>}
            </div>
 
-           <div className="p-3 space-y-2.5">
+           <div className="p-3 space-y-3 border-b dark:border-slate-700">
               <div className="space-y-1">
-                <span className="text-[8px] font-bold text-gray-400 uppercase tracking-widest pl-1">Phone</span>
-                <input type="text" value={customerPhone} onChange={e => setCustomerPhone(e.target.value)} placeholder="Phone" className="w-full px-3 py-1.5 bg-gray-50 dark:bg-slate-900/40 border dark:border-slate-700 rounded-lg text-xs dark:text-white outline-none focus:border-brand transition-colors font-semibold" />
+                <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest pl-1">Phone <span className="text-red-500">*</span></span>
+                <input type="text" value={customerPhone} onChange={e => setCustomerPhone(e.target.value)} placeholder="01XXX-XXXXXX" className="w-full px-3 py-2 bg-gray-50 dark:bg-slate-900/40 border dark:border-slate-700 rounded-lg text-sm dark:text-white outline-none focus:border-brand focus:ring-2 focus:ring-brand/20 transition-all font-semibold" />
               </div>
               <div className="space-y-1">
-                 <input type="text" value={customerName} onChange={e => setCustomerName(e.target.value)} placeholder="Customer Name" className="w-full px-3 py-1.5 bg-gray-50 dark:bg-slate-900/40 border dark:border-slate-700 rounded-lg text-xs dark:text-white outline-none focus:border-brand transition-colors" />
+                 <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest pl-1">Customer Name <span className="text-red-500">*</span></span>
+                 <input type="text" value={customerName} onChange={e => setCustomerName(e.target.value)} placeholder="Full Name" className="w-full px-3 py-2 bg-gray-50 dark:bg-slate-900/40 border dark:border-slate-700 rounded-lg text-sm dark:text-white outline-none focus:border-brand focus:ring-2 focus:ring-brand/20 transition-all font-medium" />
               </div>
-              <input type="text" value={customerAddress} onChange={e => setCustomerAddress(e.target.value)} placeholder="Address" className="w-full px-3 py-1.5 bg-gray-50 dark:bg-slate-900/40 border dark:border-slate-700 rounded-lg text-[10px] dark:text-white outline-none" />
+              <div className="space-y-1">
+                 <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest pl-1">Address <span className="text-red-500">*</span></span>
+                 <input type="text" value={customerAddress} onChange={e => setCustomerAddress(e.target.value)} placeholder="Full Address" className="w-full px-3 py-2 bg-gray-50 dark:bg-slate-900/40 border dark:border-slate-700 rounded-lg text-xs dark:text-white outline-none focus:border-brand focus:ring-2 focus:ring-brand/20 transition-all" />
+              </div>
            </div>
 
-           {/* Calculation - Always Visible at bottom on desktop, flows on mobile but constrained */}
-           <div className="mt-auto p-3 bg-gray-50/50 dark:bg-slate-900/20 border-t dark:border-slate-700 space-y-2.5 sticky bottom-0">
+           {/* Calculation - directly under customer */}
+           <div className="flex-1 flex flex-col p-3 bg-gray-50/50 dark:bg-slate-900/20 space-y-3">
               <div className="flex justify-between items-center px-1">
                  <div className="flex flex-col">
-                    <span className="text-[9px] text-gray-400 uppercase font-black uppercase">Subtotal</span>
-                    <span className="text-xs font-bold text-gray-600 dark:text-slate-200">৳{subtotal.toLocaleString()}</span>
+                    <span className="text-[9px] text-gray-400 uppercase font-black">Subtotal</span>
+                    <span className="text-sm font-bold text-gray-600 dark:text-slate-200">৳{subtotal.toLocaleString()}</span>
                  </div>
                  <div className="flex flex-col items-end">
-                    <span className="text-[9px] text-red-400 uppercase font-black uppercase">Discount</span>
-                    <div className="flex items-center gap-1 border-b border-red-200 dark:border-red-900/50">
-                      <span className="text-[10px] text-red-500 font-bold">৳</span>
-                      <input type="number" value={discount} onChange={e => setDiscount(e.target.value)} className="w-12 text-right bg-transparent outline-none text-xs font-bold text-red-500" />
+                    <span className="text-[9px] text-red-500 uppercase font-black">Discount</span>
+                    <div className="flex items-center gap-1 border-b border-red-200 dark:border-red-900/50 bg-white dark:bg-slate-800 px-2 py-0.5 rounded shadow-sm">
+                      <span className="text-xs text-red-500 font-bold">৳</span>
+                      <input type="number" value={discount} onChange={e => setDiscount(e.target.value)} className="w-14 text-right bg-transparent outline-none text-sm font-bold text-red-500" />
                     </div>
                  </div>
               </div>
 
-              <div className="p-2.5 bg-brand/5 dark:bg-brand/10 border border-brand/20 rounded-xl flex justify-between items-center">
-                 <span className="text-[9px] font-black text-gray-500 dark:text-slate-400 uppercase">Payable</span>
-                 <span className="text-lg font-black text-brand tracking-tighter">৳{grandTotal.toLocaleString()}</span>
+              <div className="p-3 bg-white dark:bg-slate-800 border border-gray-100 dark:border-slate-700 rounded-xl flex justify-between items-center shadow-sm">
+                 <span className="text-[10px] font-black text-gray-500 dark:text-slate-400 uppercase tracking-widest">Payable</span>
+                 <span className="text-2xl font-black text-brand tracking-tighter">৳{grandTotal.toLocaleString()}</span>
               </div>
 
-              <div className="grid grid-cols-4 gap-1">
+              <div className="grid grid-cols-4 gap-1.5">
                 {['cash', 'bk', 'nag', 'card'].map(method => (
                   <button 
                     key={method}
                     onClick={() => setPaymentMethod(method === 'bk' ? 'bkash' : method === 'nag' ? 'nagad' : method)}
-                    className={`py-1.5 text-[8px] font-black uppercase rounded-lg border transition-all ${paymentMethod === (method === 'bk' ? 'bkash' : method === 'nag' ? 'nagad' : method) ? 'bg-brand text-white border-brand shadow-md shadow-brand/20' : 'bg-white dark:bg-slate-800 text-gray-400 border-gray-100 dark:border-slate-700'}`}
+                    className={`py-2 text-[9px] font-black uppercase rounded-xl border transition-all ${paymentMethod === (method === 'bk' ? 'bkash' : method === 'nag' ? 'nagad' : method) ? 'bg-brand text-white border-brand shadow-md shadow-brand/20' : 'bg-white dark:bg-slate-800 text-gray-500 border-gray-200 dark:border-slate-700 hover:bg-gray-50'}`}
                   >
                     {method}
                   </button>
                 ))}
               </div>
 
-              <div className="bg-green-600/10 p-2 rounded-xl border border-green-600/20 flex items-center justify-between">
-                <span className="text-[9px] font-bold text-green-600 uppercase tracking-wider ml-1">Paid</span>
-                <div className="flex items-center">
-                  <span className="text-sm font-black text-green-600 mr-1">৳</span>
-                  <input type="number" value={paidAmount} onChange={e => setPaidAmount(e.target.value)} className="w-20 text-right bg-transparent border-none outline-none font-black text-sm text-green-600" placeholder="0" />
-                </div>
-              </div>
+              <div className="mt-auto space-y-2 pt-2">
+                 <div className="bg-green-50 dark:bg-green-900/10 p-3 rounded-2xl border border-green-200 dark:border-green-900/30 flex items-center justify-between shadow-inner">
+                   <div className="flex flex-col items-start gap-1">
+                     <span className="text-[9px] font-bold text-green-700 dark:text-green-500 uppercase tracking-wider ml-1">Paid Amount</span>
+                     <button onClick={() => setPaidAmount(grandTotal)} className="text-[8px] bg-green-600 hover:bg-green-700 text-white px-2 py-1 rounded border-b-2 border-green-800 font-black uppercase tracking-widest transition-all active:translate-y-[1px] active:border-b-0">
+                       Full Pay
+                     </button>
+                   </div>
+                   <div className="flex items-center bg-white dark:bg-slate-800 px-3 py-1.5 rounded-xl border border-green-100 dark:border-green-800 shadow-sm">
+                     <span className="text-sm font-black text-green-600 mr-1">৳</span>
+                     <input 
+                       type="number" 
+                       value={paidAmount} 
+                       onChange={e => {
+                         let val = Number(e.target.value);
+                         if (val < 0) val = 0;
+                         if (val > grandTotal) val = grandTotal;
+                         setPaidAmount(val);
+                       }} 
+                       className="w-16 sm:w-20 text-right bg-transparent border-none outline-none font-black text-lg text-green-600 placeholder-green-600/30" 
+                       placeholder="0" 
+                     />
+                   </div>
+                 </div>
 
-              <button 
-                onClick={handleCheckout}
-                disabled={loading || cart.length === 0}
-                className="w-full py-2.5 bg-brand hover:bg-brand-dark text-white font-black rounded-lg shadow-lg shadow-brand/20 transition-all active:scale-95 disabled:opacity-50 text-sm uppercase tracking-widest"
-              >
-                {loading ? '...' : 'Confirm'}
-              </button>
+                 {/* Due Display */}
+                 {grandTotal > paidAmount && (
+                    <div className="bg-red-50/50 dark:bg-red-900/10 p-2.5 rounded-xl border border-red-100 dark:border-red-900/30 flex items-center justify-between mb-2">
+                       <span className="text-[10px] font-bold text-red-500 uppercase tracking-widest ml-1">Due Amount</span>
+                       <span className="text-sm font-black text-red-600">৳{(grandTotal - paidAmount).toLocaleString()}</span>
+                    </div>
+                 )}
+
+                 <button 
+                   onClick={handleCheckout}
+                   disabled={loading || cart.length === 0}
+                   className="w-full py-3 bg-brand hover:bg-brand-dark text-white font-black rounded-xl shadow-lg shadow-brand/20 transition-all active:scale-[0.98] disabled:opacity-50 text-xs uppercase tracking-widest flex items-center justify-center gap-2 mt-2"
+                 >
+                   {loading ? 'Processing...' : 'Confirm Checkout'}
+                 </button>
+              </div>
            </div>
         </div>
       </div>

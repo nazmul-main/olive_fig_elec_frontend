@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import api from '@/lib/axios';
 import StatsCard from '@/components/ui/StatsCard';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { 
   TrendingUp, 
   BarChart3, 
@@ -20,13 +21,20 @@ export default function Dashboard() {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  const [chartStart, setChartStart] = useState(() => {
+    const d = new Date();
+    d.setDate(d.getDate() - 6);
+    return d.toISOString().split('T')[0];
+  });
+  const [chartEnd, setChartEnd] = useState(() => new Date().toISOString().split('T')[0]);
+
   useEffect(() => {
     fetchStats();
-  }, []);
+  }, [chartStart, chartEnd]);
 
   const fetchStats = async () => {
     try {
-      const { data } = await api.get('/dashboard');
+      const { data } = await api.get(`/dashboard?chartStart=${chartStart}&chartEnd=${chartEnd}`);
       if (data.success) {
         setStats(data);
       }
@@ -50,7 +58,7 @@ export default function Dashboard() {
     </div>
   );
 
-  const { stats: dStats, recentSales, lowStockProducts } = stats;
+  const { stats: dStats, recentSales, lowStockProducts, chartData } = stats;
 
   return (
     <div className="max-w-7xl mx-auto space-y-8">
@@ -96,6 +104,59 @@ export default function Dashboard() {
           icon={<Package className="h-6 w-6 text-orange-600" />}
         />
       </div>
+
+      {/* Analytics Chart */}
+      {chartData && chartData.length > 0 && (
+        <div className="bg-white dark:bg-slate-800 p-6 rounded-3xl border dark:border-slate-700 shadow-xl shadow-gray-200/40 dark:shadow-none transition-all">
+          <div className="mb-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white flex items-center">
+              <TrendingUp className="mr-2 h-5 w-5 text-brand" />
+              Revenue & Expense Analytics
+            </h3>
+            
+            <div className="flex items-center gap-2">
+              <input 
+                type="date" 
+                value={chartStart} 
+                onChange={(e) => setChartStart(e.target.value)} 
+                className="text-xs border border-gray-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 focus:ring-2 focus:ring-brand focus:border-brand dark:bg-slate-900 dark:text-white outline-none" 
+              />
+              <span className="text-gray-400 text-xs font-bold">TO</span>
+              <input 
+                type="date" 
+                value={chartEnd} 
+                onChange={(e) => setChartEnd(e.target.value)} 
+                className="text-xs border border-gray-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 focus:ring-2 focus:ring-brand focus:border-brand dark:bg-slate-900 dark:text-white outline-none" 
+              />
+            </div>
+          </div>
+          <div className="h-72 w-full mt-4">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#2563EB" stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor="#2563EB" stopOpacity={0}/>
+                  </linearGradient>
+                  <linearGradient id="colorExpense" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#EF4444" stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor="#EF4444" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#9ca3af' }} dy={10} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#9ca3af' }} tickFormatter={(value) => `৳${value}`} />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" opacity={0.5} />
+                <Tooltip 
+                  contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1)', cursor: 'default' }}
+                  itemStyle={{ fontWeight: 'bold' }}
+                />
+                <Area type="monotone" dataKey="revenue" name="Revenue" stroke="#2563EB" strokeWidth={3} fillOpacity={1} fill="url(#colorRevenue)" />
+                <Area type="monotone" dataKey="expenses" name="Expenses" stroke="#EF4444" strokeWidth={3} fillOpacity={1} fill="url(#colorExpense)" />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      )}
 
       {/* Lists Grid */}
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
