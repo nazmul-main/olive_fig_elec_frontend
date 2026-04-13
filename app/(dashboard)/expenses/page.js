@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import api from '@/lib/axios';
 import DataTable from '@/components/ui/DataTable';
 import Modal from '@/components/ui/Modal';
@@ -12,6 +12,9 @@ import * as XLSX from 'xlsx';
 export default function ExpensesPage() {
   const [expenses, setExpenses] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -25,24 +28,58 @@ export default function ExpensesPage() {
   const { user } = useAuthStore();
 
   useEffect(() => {
-    fetchExpenses();
+    setPage(1);
+    setExpenses([]);
+    setHasMore(true);
+    fetchExpenses(1, true);
   }, [startDate, endDate]);
 
-  const fetchExpenses = async () => {
+  const fetchExpenses = async (pageNumber = 1, isInitial = false) => {
     try {
-      setLoading(true);
+      if (isInitial) setLoading(true);
+      else setLoadingMore(true);
+
       const { data } = await api.get('/expenses', {
-        params: { startDate: startDate || undefined, endDate: endDate || undefined, limit: 100 }
+        params: { 
+          startDate: startDate || undefined, 
+          endDate: endDate || undefined, 
+          limit: 20,
+          page: pageNumber
+        }
       });
       if (data.success) {
-        setExpenses(data.expenses);
+        if (isInitial) {
+          setExpenses(data.expenses);
+        } else {
+          setExpenses(prev => [...prev, ...data.expenses]);
+        }
+        setHasMore(data.expenses.length === 20);
         setMonthlyTotal(data.monthlyTotal);
       }
     } catch (e) {
       toast.error('Failed to load expenses');
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
+  };
+
+  const observer = useRef();
+  const lastElementRef = (node) => {
+    if (loading || loadingMore) return;
+    if (observer.current) observer.current.disconnect();
+    
+    observer.current = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting && hasMore) {
+        setPage(prev => {
+           const nextPage = prev + 1;
+           fetchExpenses(nextPage);
+           return nextPage;
+        });
+      }
+    });
+
+    if (node) observer.current.observe(node);
   };
 
   const handleOpenModal = (exp = null) => {
@@ -67,15 +104,31 @@ export default function ExpensesPage() {
          toast.success('Expense added');
       }
       setIsModalOpen(false);
-      fetchExpenses();
+      fetchExpenses(1, true);
     } catch (e) {
       toast.error(e.response?.data?.message || 'Error saving expense');
     }
   };
 
-  const handleExportExcel = () => {
+  const handleExportExcel = async () => {
+    const toastId = toast.loading('Preparing full expense report...');
     try {
-      const exportData = expenses.map(exp => ({
+      // Fetch all records from the server
+      const { data } = await api.get('/expenses', {
+        params: { 
+          limit: 0,
+          startDate: startDate || undefined, 
+          endDate: endDate || undefined 
+        }
+      });
+
+      if (!data.success || !data.expenses) {
+        throw new Error('Failed to fetch data');
+      }
+
+      const reportData = data.expenses.length > 0 ? data.expenses : expenses;
+
+      const exportData = reportData.map(exp => ({
         'Date': new Date(exp.date).toLocaleDateString(),
         'Title': exp.title,
         'Category': exp.category.toUpperCase(),
@@ -89,9 +142,10 @@ export default function ExpensesPage() {
       XLSX.utils.book_append_sheet(workbook, worksheet, "Expenses");
 
       XLSX.writeFile(workbook, `Expenses_Report_${new Date().toISOString().split('T')[0]}.xlsx`);
-      toast.success('Expense report downloaded!');
+      toast.success('Expense report downloaded!', { id: toastId });
     } catch (e) {
-      toast.error('Failed to export Excel');
+      console.error('Export Error:', e);
+      toast.error('Failed to export report', { id: toastId });
     }
   };
 
@@ -110,7 +164,7 @@ export default function ExpensesPage() {
       });
       if (data.success) {
         toast.success('Expense deleted');
-        fetchExpenses();
+        fetchExpenses(1, true);
         setShowDeleteModal(false);
       }
     } catch (e) {
@@ -130,52 +184,57 @@ export default function ExpensesPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white dark:bg-slate-800 p-6 rounded-3xl border dark:border-slate-700 shadow-xl shadow-gray-200/40 dark:shadow-none transition-all">
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 bg-red-500/10 text-red-600 rounded-2xl flex items-center justify-center">
-             <Wallet size={24} />
+      <div className="bg-white dark:bg-slate-800 p-5 md:p-6 rounded-3xl border dark:border-slate-700 shadow-xl shadow-gray-200/40 dark:shadow-none transition-all">
+        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-red-500/10 text-red-600 rounded-2xl flex items-center justify-center shrink-0">
+               <Wallet size={24} />
+            </div>
+            <div>
+              <h1 className="text-xl md:text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tight leading-none">Financial Expenses</h1>
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1.5">
+                 Total (Month): <span className="text-red-500 font-black">৳{monthlyTotal.toLocaleString()}</span>
+              </p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tight">Financial Expenses</h1>
-            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-0.5">
-               Total: <span className="text-red-500">৳{monthlyTotal.toLocaleString()}</span> (Current Month)
-            </p>
-          </div>
-        </div>
 
-        <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
-          <div className="flex items-center gap-2 bg-gray-50 dark:bg-slate-900/50 px-3 py-1.5 rounded-xl border dark:border-slate-700">
-             <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">From</span>
-             <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="bg-transparent text-[10px] font-bold outline-none dark:text-white" />
-          </div>
-          <div className="flex items-center gap-2 bg-gray-50 dark:bg-slate-900/50 px-3 py-1.5 rounded-xl border dark:border-slate-700">
-             <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">To</span>
-             <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className="bg-transparent text-[10px] font-bold outline-none dark:text-white" />
-          </div>
-          
-          {(startDate || endDate) && (
-            <button onClick={() => { setStartDate(''); setEndDate(''); }} className="text-[10px] font-black text-red-500 uppercase px-2 hover:underline transition-all">Clear</button>
-          )}
-
-          <div className="w-px h-6 bg-gray-200 dark:bg-slate-700 hidden md:block"></div>
-
-          <div className="flex items-center gap-2">
-            <button 
-              onClick={handleExportExcel}
-              disabled={expenses.length === 0}
-              className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-lg shadow-green-600/20 disabled:opacity-50"
-            >
-              <FileUp size={14} /> Export
-            </button>
+          <div className="flex items-center gap-2 w-full lg:w-auto">
+            <div className="flex flex-1 items-center bg-gray-50 dark:bg-slate-900/50 rounded-2xl border dark:border-slate-700 p-0.5 sm:p-1 overflow-hidden">
+               <div className="flex items-center gap-1.5 px-2 sm:px-3 py-1.5 flex-1">
+                  <span className="text-[8px] sm:text-[9px] font-black text-gray-400 uppercase tracking-widest">From</span>
+                  <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="bg-transparent text-[10px] sm:text-[11px] font-bold outline-none dark:text-white w-full min-w-[75px]" />
+               </div>
+               <div className="w-px h-5 bg-gray-200 dark:bg-slate-700"></div>
+               <div className="flex items-center gap-1.5 px-2 sm:px-3 py-1.5 flex-1">
+                  <span className="text-[8px] sm:text-[9px] font-black text-gray-400 uppercase tracking-widest">To</span>
+                  <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className="bg-transparent text-[10px] sm:text-[11px] font-bold outline-none dark:text-white w-full min-w-[75px]" />
+               </div>
+            </div>
             
-            {(user?.role === 'admin' || user?.role === 'manager') && (
-              <button 
-                onClick={() => handleOpenModal()} 
-                className="flex items-center gap-2 px-4 py-2 bg-brand hover:bg-brand-dark text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-lg shadow-brand/20"
-              >
-                <Plus size={14} /> Add New
-              </button>
-            )}
+            <div className="flex items-center gap-2 shrink-0">
+               {(startDate || endDate) && (
+                 <button onClick={() => { setStartDate(''); setEndDate(''); }} className="text-[10px] font-black text-red-500 uppercase px-1 hover:underline transition-all hidden sm:block">Clear</button>
+               )}
+               
+               <button 
+                 onClick={handleExportExcel}
+                 disabled={expenses.length === 0}
+                 title="Export Expense Report"
+                 className="w-10 h-10 flex items-center justify-center bg-green-600 hover:bg-green-700 text-white rounded-xl transition-all shadow-lg shadow-green-600/20 disabled:opacity-50 shrink-0"
+               >
+                 <FileUp size={18} />
+               </button>
+
+               {(user?.role === 'admin' || user?.role === 'manager') && (
+                 <button 
+                  onClick={() => handleOpenModal()} 
+                  title="Add New Expense"
+                  className="w-10 h-10 flex items-center justify-center bg-brand hover:bg-brand-dark text-white rounded-xl transition-all shadow-lg shadow-brand/20 shrink-0"
+                 >
+                   <Plus size={20} />
+                 </button>
+               )}
+            </div>
           </div>
         </div>
       </div>
@@ -185,13 +244,26 @@ export default function ExpensesPage() {
           <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-brand"></div>
         </div>
       ) : (
-        <div className="bg-white dark:bg-slate-800 rounded-3xl border dark:border-slate-700 shadow-xl overflow-hidden transition-all">
+        <div className="bg-white dark:bg-slate-800 rounded-3xl border dark:border-slate-700 shadow-xl overflow-hidden transition-all text-xs">
           <DataTable 
             columns={columns} 
             data={expenses} 
             onEdit={(user?.role === 'admin' || user?.role === 'manager') ? handleOpenModal : null} 
             onDelete={user?.role === 'admin' ? handleDeleteClick : null} 
+            disablePagination={true}
           />
+          
+          <div ref={lastElementRef} className="h-16 flex items-center justify-center border-t dark:border-slate-700 bg-gray-50/50 dark:bg-slate-900/20">
+             {loadingMore && (
+               <div className="flex items-center gap-2 text-gray-400">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-brand"></div>
+                  <span className="font-black uppercase tracking-widest text-[9px]">Loading more...</span>
+               </div>
+             )}
+             {!hasMore && expenses.length > 0 && (
+               <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest bg-white dark:bg-slate-800 px-4 py-1.5 rounded-full border dark:border-slate-700 shadow-sm">End of expenses</span>
+             )}
+          </div>
         </div>
       )}
 

@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import api from '@/lib/axios';
 import DataTable from '@/components/ui/DataTable';
 import Modal from '@/components/ui/Modal';
@@ -12,6 +12,9 @@ import * as XLSX from 'xlsx';
 export default function ProductsPage() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -21,20 +24,55 @@ export default function ProductsPage() {
   const { user } = useAuthStore();
 
   useEffect(() => {
-    fetchProducts();
+    setPage(1);
+    setProducts([]);
+    setHasMore(true);
+    fetchProducts(1, true);
   }, []);
 
-  const fetchProducts = async () => {
+  const fetchProducts = async (pageNumber = 1, isInitial = false) => {
     try {
-      const { data } = await api.get('/products?limit=100');
+      if (isInitial) setLoading(true);
+      else setLoadingMore(true);
+
+      const { data } = await api.get('/products', {
+        params: { 
+            limit: 20, 
+            page: pageNumber 
+        }
+      });
       if (data.success) {
-        setProducts(data.products);
+        if (isInitial) {
+          setProducts(data.products);
+        } else {
+          setProducts(prev => [...prev, ...data.products]);
+        }
+        setHasMore(data.products.length === 20);
       }
     } catch (e) {
       toast.error('Failed to load products');
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
+  };
+
+  const observer = useRef();
+  const lastElementRef = (node) => {
+    if (loading || loadingMore) return;
+    if (observer.current) observer.current.disconnect();
+    
+    observer.current = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting && hasMore) {
+        setPage(prev => {
+           const nextPage = prev + 1;
+           fetchProducts(nextPage);
+           return nextPage;
+        });
+      }
+    });
+
+    if (node) observer.current.observe(node);
   };
 
   const handleOpenModal = (product = null) => {
@@ -59,15 +97,27 @@ export default function ProductsPage() {
          toast.success('Product created');
       }
       setIsModalOpen(false);
-      fetchProducts();
+      fetchProducts(1, true);
     } catch (e) {
       toast.error(e.response?.data?.message || 'Error saving product');
     }
   };
 
-  const handleExportExcel = () => {
+  const handleExportExcel = async () => {
+    const toastId = toast.loading('Preparing full product report...');
     try {
-      const exportData = products.map(p => ({
+      // Fetch all records from the server
+      const { data } = await api.get('/products', {
+        params: { limit: 0 }
+      });
+
+      if (!data.success || !data.products) {
+          throw new Error('Failed to fetch data');
+      }
+
+      const reportData = data.products.length > 0 ? data.products : products;
+
+      const exportData = reportData.map(p => ({
         'Code': p.code,
         'Name': p.name,
         'Brand': p.brand,
@@ -85,9 +135,10 @@ export default function ProductsPage() {
       XLSX.utils.book_append_sheet(workbook, worksheet, "Current Stock");
 
       XLSX.writeFile(workbook, `Stock_Inventory_${new Date().toISOString().split('T')[0]}.xlsx`);
-      toast.success('Current inventory report downloaded!');
+      toast.success('Inventory report downloaded!', { id: toastId });
     } catch (e) {
-      toast.error('Failed to export Excel');
+      console.error('Export Error:', e);
+      toast.error('Failed to export report', { id: toastId });
     }
   };
 
@@ -106,7 +157,7 @@ export default function ProductsPage() {
       });
       if (data.success) {
         toast.success('Product deleted');
-        fetchProducts();
+        fetchProducts(1, true);
         setShowDeleteModal(false);
       }
     } catch (e) {
@@ -127,36 +178,40 @@ export default function ProductsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white dark:bg-slate-800 p-6 rounded-3xl border dark:border-slate-700 shadow-xl shadow-gray-200/40 dark:shadow-none transition-all">
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 bg-blue-500/10 text-blue-600 rounded-2xl flex items-center justify-center">
-             <Package size={24} />
+      <div className="bg-white dark:bg-slate-800 p-5 md:p-6 rounded-3xl border dark:border-slate-700 shadow-xl shadow-gray-200/40 dark:shadow-none transition-all">
+        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-blue-500/10 text-blue-600 rounded-2xl flex items-center justify-center shrink-0">
+               <Package size={24} />
+            </div>
+            <div>
+              <h1 className="text-xl md:text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tight leading-none">Product Inventory</h1>
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1.5">
+                 Stock Control System <span className="text-blue-600 font-black">({products.length} Items)</span>
+              </p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tight">Product Inventory</h1>
-            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-0.5">
-               Total Items: <span className="text-blue-600">{products.length}</span>
-            </p>
-          </div>
-        </div>
 
-        <div className="flex flex-wrap items-center gap-3">
-          <button 
-            onClick={handleExportExcel}
-            disabled={products.length === 0}
-            className="flex items-center gap-2 px-6 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-lg shadow-green-600/20 disabled:opacity-50"
-          >
-            <FileUp size={16} /> Export Stock
-          </button>
-          
-          {(user?.role === 'admin' || user?.role === 'manager') && (
+          <div className="flex items-center gap-2 w-full lg:w-auto shrink-0">
             <button 
-              onClick={() => handleOpenModal()} 
-              className="flex items-center gap-2 px-6 py-2.5 bg-brand hover:bg-brand-dark text-white rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-lg shadow-brand/20"
+              onClick={handleExportExcel}
+              disabled={products.length === 0}
+              title="Export Full Inventory"
+              className="w-10 h-10 flex items-center justify-center bg-green-600 hover:bg-green-700 text-white rounded-xl transition-all shadow-lg shadow-green-600/20 disabled:opacity-50 shrink-0"
             >
-              <Plus size={16} /> Add Product
+              <FileUp size={18} />
             </button>
-          )}
+            
+            {(user?.role === 'admin' || user?.role === 'manager') && (
+              <button 
+                onClick={() => handleOpenModal()} 
+                title="Add New Product"
+                className="flex flex-1 lg:flex-none items-center justify-center gap-2 px-6 h-10 bg-brand hover:bg-brand-dark text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-lg shadow-brand/20"
+              >
+                <Plus size={16} /> <span className="hidden sm:inline">Add New</span>
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -165,13 +220,26 @@ export default function ProductsPage() {
           <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-brand"></div>
         </div>
       ) : (
-        <div className="bg-white dark:bg-slate-800 rounded-3xl border dark:border-slate-700 shadow-xl overflow-hidden transition-all text-sm font-medium">
+        <div className="bg-white dark:bg-slate-800 rounded-3xl border dark:border-slate-700 shadow-xl overflow-hidden transition-all text-xs font-medium">
           <DataTable 
             columns={columns} 
             data={products} 
             onEdit={(user?.role === 'admin' || user?.role === 'manager') ? handleOpenModal : null} 
             onDelete={user?.role === 'admin' ? handleDeleteClick : null} 
+            disablePagination={true}
           />
+          
+          <div ref={lastElementRef} className="h-16 flex items-center justify-center border-t dark:border-slate-700 bg-gray-50/30 dark:bg-slate-900/20">
+             {loadingMore && (
+               <div className="flex items-center gap-2 text-gray-400">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-brand"></div>
+                  <span className="font-black uppercase tracking-widest text-[9px]">Loading more products...</span>
+               </div>
+             )}
+             {!hasMore && products.length > 0 && (
+               <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest bg-white dark:bg-slate-800 px-4 py-1.5 rounded-full border dark:border-slate-700 shadow-sm">End of inventory</span>
+             )}
+          </div>
         </div>
       )}
 

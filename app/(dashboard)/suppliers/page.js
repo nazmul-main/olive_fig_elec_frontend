@@ -1,11 +1,12 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import api from '@/lib/axios';
 import Modal from '@/components/ui/Modal';
 import ConfirmDeleteModal from '@/components/ui/ConfirmDeleteModal';
 import toast from 'react-hot-toast';
 import useAuthStore from '@/store/useAuthStore';
-import { Truck, Plus, AlertCircle, CheckCircle, Eye, Pencil, Trash2, Phone, User, MapPin } from 'lucide-react';
+import { Truck, Plus, AlertCircle, CheckCircle, Eye, Pencil, Trash2, Phone, User, MapPin, FileUp } from 'lucide-react';
+import * as XLSX from 'xlsx';
 import Link from 'next/link';
 
 export default function SuppliersPage() {
@@ -66,6 +67,31 @@ export default function SuppliersPage() {
     finally { setIsDeleting(false); }
   };
 
+  const handleExportExcel = async () => {
+    const toastId = toast.loading('Preparing supplier report...');
+    try {
+      const exportData = suppliers.map(s => ({
+        'Supplier Name': s.name,
+        'Contact Person': s.contactPerson || 'N/A',
+        'Phone': s.phone || 'N/A',
+        'Address': s.address || 'N/A',
+        'Email': s.email || 'N/A',
+        'Total Purchased': s.totalPurchased,
+        'Total Paid': s.totalPaid,
+        'Due Amount': s.totalPurchased - s.totalPaid
+      }));
+
+      const worksheet = XLSX.utils.json_to_sheet(exportData);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Suppliers");
+
+      XLSX.writeFile(workbook, `Suppliers_Ledger_${new Date().toISOString().split('T')[0]}.xlsx`);
+      toast.success('Supplier report downloaded!', { id: toastId });
+    } catch (e) {
+      toast.error('Failed to export report');
+    }
+  };
+
   const totalDueAll = suppliers.reduce((sum, s) => sum + (s.totalPurchased - s.totalPaid), 0);
   const totalPurchasedAll = suppliers.reduce((sum, s) => sum + s.totalPurchased, 0);
 
@@ -73,35 +99,56 @@ export default function SuppliersPage() {
   const labelCls = "block text-sm font-medium text-gray-700 dark:text-slate-300";
 
   return (
-    <div>
+    <div className="space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-2xl font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-            <Truck className="h-6 w-6 text-brand" /> Suppliers
-          </h1>
-          <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">Manage your brand & distributor accounts</p>
+      <div className="bg-white dark:bg-slate-800 p-5 md:p-6 rounded-3xl border dark:border-slate-700 shadow-xl shadow-gray-200/40 dark:shadow-none transition-all">
+        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-indigo-500/10 text-indigo-600 rounded-2xl flex items-center justify-center shrink-0">
+               <Truck size={24} />
+            </div>
+            <div>
+              <h1 className="text-xl md:text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tight leading-none">Suppliers Ledger</h1>
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1.5">Manage brands & distributor accounts</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 w-full lg:w-auto shrink-0 justify-end">
+             <button 
+               onClick={handleExportExcel}
+               disabled={suppliers.length === 0}
+               title="Export Supplier Report"
+               className="w-10 h-10 flex items-center justify-center bg-green-600 hover:bg-green-700 text-white rounded-xl transition-all shadow-lg shadow-green-600/20 disabled:opacity-50 shrink-0"
+             >
+               <FileUp size={18} />
+             </button>
+
+             {(user?.role === 'admin' || user?.role === 'manager') && (
+               <button 
+                onClick={() => handleOpenModal()} 
+                title="Add New Supplier"
+                className="flex items-center justify-center gap-2 px-6 h-10 bg-brand hover:bg-brand-dark text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-lg shadow-brand/20"
+               >
+                 <Plus size={16} /> <span className="hidden sm:inline">Add New</span>
+               </button>
+             )}
+          </div>
         </div>
-        {(user?.role === 'admin' || user?.role === 'manager') && (
-          <button onClick={() => handleOpenModal()} className="bg-brand text-white px-4 py-2 rounded-md hover:bg-brand-dark transition-colors flex items-center gap-2">
-            <Plus className="h-4 w-4" /> Add Supplier
-          </button>
-        )}
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-        <div className="bg-white dark:bg-slate-800 rounded-xl p-4 border border-gray-200 dark:border-slate-700 shadow-sm">
-          <p className="text-sm text-gray-500 dark:text-slate-400">Total Suppliers</p>
-          <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{suppliers.length}</p>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="bg-white dark:bg-slate-800 p-5 rounded-3xl border dark:border-slate-700 shadow-sm">
+          <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Total Accounts</p>
+          <p className="text-2xl font-black text-gray-900 dark:text-white mt-1 uppercase leading-none">{suppliers.length}</p>
         </div>
-        <div className="bg-white dark:bg-slate-800 rounded-xl p-4 border border-gray-200 dark:border-slate-700 shadow-sm">
-          <p className="text-sm text-gray-500 dark:text-slate-400">Total Purchased</p>
-          <p className="text-2xl font-bold text-brand mt-1">৳{totalPurchasedAll.toLocaleString()}</p>
+        <div className="bg-white dark:bg-slate-800 p-5 rounded-3xl border dark:border-slate-700 shadow-sm border-l-4 border-l-brand">
+          <p className="text-[9px] font-black text-brand/60 uppercase tracking-widest">Total Purchased</p>
+          <p className="text-2xl font-black text-brand mt-1 leading-none uppercase tracking-tighter">৳{totalPurchasedAll.toLocaleString()}</p>
         </div>
-        <div className="bg-white dark:bg-slate-800 rounded-xl p-4 border border-red-200 dark:border-red-900/40 shadow-sm bg-red-50 dark:bg-red-900/10">
-          <p className="text-sm text-red-500 dark:text-red-400">Total Due (All Suppliers)</p>
-          <p className="text-2xl font-bold text-red-600 dark:text-red-400 mt-1">৳{totalDueAll.toLocaleString()}</p>
+        <div className="bg-white dark:bg-slate-800 p-5 rounded-3xl border dark:border-slate-700 shadow-sm border-l-4 border-l-red-500 bg-red-50/30">
+          <p className="text-[9px] font-black text-red-500/60 uppercase tracking-widest">Total Outstanding</p>
+          <p className="text-2xl font-black text-red-600 mt-1 leading-none uppercase tracking-tighter">৳{totalDueAll.toLocaleString()}</p>
         </div>
       </div>
 

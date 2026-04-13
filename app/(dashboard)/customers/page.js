@@ -1,10 +1,11 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import api from '@/lib/axios';
 import toast from 'react-hot-toast';
-import { Search, UserPlus, Phone, CreditCard, History, DollarSign, Trash2 } from 'lucide-react';
+import { Search, UserPlus, Phone, CreditCard, History, DollarSign, Trash2, FileUp } from 'lucide-react';
 import ConfirmDeleteModal from '@/components/ui/ConfirmDeleteModal';
 import useAuthStore from '@/store/useAuthStore';
+import * as XLSX from 'xlsx';
 
 export default function CustomersPage() {
   const [customers, setCustomers] = useState([]);
@@ -84,67 +85,99 @@ export default function CustomersPage() {
     setShowDeleteModal(true);
   };
 
-  const confirmDelete = async (password) => {
-    setIsDeleting(true);
+  const handleExportExcel = async () => {
+    const toastId = toast.loading('Preparing full customer ledger...');
     try {
-      const { data } = await api.delete(`/customers/${customerToDelete._id}`, {
-        data: { password } // Sending password in body for DELETE
-      });
-      if (data.success) {
-        toast.success('Customer deleted successfully');
-        setShowDeleteModal(false);
-        fetchCustomers();
-      }
+      // Fetch all records (search already handled by backend if needed, but here we fetch all for export)
+      const { data } = await api.get(`/customers?search=${search}`);
+      if (!data.success || !data.customers) throw new Error('Failed to fetch customers');
+
+      const exportData = data.customers.map(c => ({
+        'Name': c.name,
+        'Phone': c.phone || 'N/A',
+        'Email': c.email || 'N/A',
+        'Address': c.address || 'N/A',
+        'Total Purchased': c.totalPurchased || 0,
+        'Total Paid': c.totalPaid || 0,
+        'Total Due': c.totalDue || 0,
+        'Last Transaction': c.lastTransactionDate ? new Date(c.lastTransactionDate).toLocaleDateString() : 'N/A'
+      }));
+
+      const worksheet = XLSX.utils.json_to_sheet(exportData);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Customers");
+
+      XLSX.writeFile(workbook, `Customer_Ledger_${new Date().toISOString().split('T')[0]}.xlsx`);
+      toast.success('Customer ledger downloaded!', { id: toastId });
     } catch (e) {
-      toast.error(e.response?.data?.message || 'Failed to delete customer');
-    } finally {
-      setIsDeleting(false);
+      toast.error('Failed to export report', { id: toastId });
     }
   };
 
-  return (
-    <div className="p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Customer Ledger</h1>
-        <button 
-          onClick={() => setShowAddModal(true)}
-          className="bg-brand text-white px-4 py-2 rounded-lg flex items-center space-x-2 hover:bg-brand-dark transition-all"
-        >
-          <UserPlus size={18} />
-          <span>Add New Customer</span>
-        </button>
-      </div>
+  const totalReceivables = customers.reduce((acc, c) => acc + c.totalDue, 0);
+  const totalCollections = customers.reduce((acc, c) => acc + c.totalPaid, 0);
 
-      {/* Search Bar */}
-      <div className="relative mb-6">
-        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
-          <Search size={20} />
-        </span>
-        <input 
-          type="text" 
-          placeholder="Search by name or phone..." 
-          className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-900 dark:text-white transition-all focus:ring-2 focus:ring-brand shadow-sm"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
+  return (
+    <div className="space-y-6">
+      <div className="bg-white dark:bg-slate-800 p-5 md:p-6 rounded-3xl border dark:border-slate-700 shadow-xl shadow-gray-200/40 dark:shadow-none transition-all">
+        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
+          <div>
+            <h1 className="text-xl md:text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tight leading-none text-brand">Customer Ledger</h1>
+            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1.5">Manage receivables & collection history</p>
+          </div>
+
+          <div className="flex items-center gap-2 w-full lg:w-auto">
+            <div className="relative flex-1 lg:w-64">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
+              <input 
+                type="text" 
+                placeholder="Search..." 
+                className="w-full pl-9 pr-4 py-2 text-xs rounded-xl border border-gray-100 dark:border-slate-700 bg-gray-50 dark:bg-slate-900 dark:text-white transition-all focus:ring-2 focus:ring-brand/20 outline-none"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+            </div>
+            
+            <div className="flex items-center gap-2 shrink-0">
+               <button 
+                 onClick={handleExportExcel}
+                 disabled={customers.length === 0}
+                 title="Export Customer Report"
+                 className="w-10 h-10 flex items-center justify-center bg-green-600 hover:bg-green-700 text-white rounded-xl transition-all shadow-lg shadow-green-600/20 disabled:opacity-50 shrink-0"
+               >
+                 <FileUp size={18} />
+               </button>
+
+               {(user?.role === 'admin' || user?.role === 'manager') && (
+                 <button 
+                  onClick={() => setShowAddModal(true)} 
+                  title="Add New Customer"
+                  className="w-10 h-10 flex items-center justify-center bg-brand hover:bg-brand-dark text-white rounded-xl transition-all shadow-lg shadow-brand/20 shrink-0"
+                 >
+                   <UserPlus size={20} />
+                 </button>
+               )}
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700">
-           <p className="text-sm text-gray-500 dark:text-slate-400 font-medium">Total Customers</p>
-           <h3 className="text-3xl font-bold text-gray-900 dark:text-white mt-1">{customers.length}</h3>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="bg-white dark:bg-slate-800 p-5 rounded-3xl border dark:border-slate-700 shadow-sm">
+           <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Active Accounts</p>
+           <h3 className="text-2xl font-black text-gray-900 dark:text-white mt-1 uppercase leading-none">{customers.length}</h3>
         </div>
-        <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700">
-           <p className="text-sm text-gray-500 dark:text-slate-400 font-medium">Total Receivables (Dues)</p>
-           <h3 className="text-3xl font-bold text-red-500 mt-1">
-             ৳{customers.reduce((acc, c) => acc + c.totalDue, 0).toLocaleString()}
+        <div className="bg-white dark:bg-slate-800 p-5 rounded-3xl border dark:border-slate-700 shadow-sm border-l-4 border-l-red-500">
+           <p className="text-[9px] font-black text-red-500/60 uppercase tracking-widest">Total Receivables</p>
+           <h3 className="text-2xl font-black text-red-600 mt-1 leading-none uppercase tracking-tighter">
+             ৳{totalReceivables.toLocaleString()}
            </h3>
         </div>
-        <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700">
-           <p className="text-sm text-gray-500 dark:text-slate-400 font-medium">Total Collections</p>
-           <h3 className="text-3xl font-bold text-green-500 mt-1">
-             ৳{customers.reduce((acc, c) => acc + c.totalPaid, 0).toLocaleString()}
+        <div className="bg-white dark:bg-slate-800 p-5 rounded-3xl border dark:border-slate-700 shadow-sm border-l-4 border-l-green-500">
+           <p className="text-[9px] font-black text-green-500/60 uppercase tracking-widest">Total Collected</p>
+           <h3 className="text-2xl font-black text-green-600 mt-1 leading-none uppercase tracking-tighter">
+             ৳{totalCollections.toLocaleString()}
            </h3>
         </div>
       </div>

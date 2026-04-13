@@ -105,9 +105,25 @@ export default function SalesHistoryPage() {
     }
   };
 
-  const handleExportExcel = () => {
+  const handleExportExcel = async () => {
+    const toastId = toast.loading('Preparing full sales report...');
     try {
-      const exportData = sales.map(s => ({
+      // Fetch all records from the server for the current filters
+      const { data } = await api.get('/sales', {
+        params: { 
+          limit: 0, 
+          startDate: startDate || undefined, 
+          endDate: endDate || undefined 
+        }
+      });
+
+      if (!data.success || !data.sales) {
+        throw new Error('Failed to fetch sales data');
+      }
+
+      const reportData = data.sales.length > 0 ? data.sales : sales;
+
+      const exportData = reportData.map(s => ({
         'Invoice No': s.invoiceNo,
         'Date': new Date(s.saleDate).toLocaleDateString(),
         'Customer': s.customerName,
@@ -126,14 +142,14 @@ export default function SalesHistoryPage() {
       const workbook = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(workbook, worksheet, "Sales History");
 
-      // Auto-size columns (basic implementation)
       const max_width = exportData.reduce((w, r) => Math.max(w, r.Customer?.length || 0), 10);
       worksheet["!cols"] = [ { wch: 15 }, { wch: 12 }, { wch: max_width + 5 }, { wch: 15 }, { wch: 10 }, { wch: 10 }, { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 15 }, { wch: 12 }, { wch: 15 } ];
 
       XLSX.writeFile(workbook, `Sales_Report_${new Date().toISOString().split('T')[0]}.xlsx`);
-      toast.success('Excel report downloaded!');
+      toast.success('Sales report downloaded!', { id: toastId });
     } catch (e) {
-      toast.error('Failed to export Excel');
+      console.error('Export Error:', e);
+      toast.error('Failed to export report', { id: toastId });
     }
   };
 
@@ -161,36 +177,41 @@ export default function SalesHistoryPage() {
   ];
 
   return (
-    <div>
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 bg-white dark:bg-slate-800 p-4 rounded-3xl border dark:border-slate-700 shadow-xl shadow-gray-200/50 dark:shadow-none transition-all">
-        <div>
-          <h1 className="text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tight">Sales History</h1>
-          <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">Found {sales.length} transactions</p>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-2 bg-gray-50 dark:bg-slate-900/50 px-3 py-1.5 rounded-xl border dark:border-slate-700">
-             <span className="text-[10px] font-black text-gray-400 uppercase">From</span>
-             <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="bg-transparent text-xs font-bold outline-none dark:text-white" />
+    <div className="space-y-6">
+      <div className="bg-white dark:bg-slate-800 p-5 md:p-6 rounded-3xl border dark:border-slate-700 shadow-xl shadow-gray-200/40 dark:shadow-none transition-all">
+        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
+          <div>
+            <h1 className="text-xl md:text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tight leading-none">Sales History</h1>
+            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1.5">Manage transaction logs & invoices</p>
           </div>
-          <div className="flex items-center gap-2 bg-gray-50 dark:bg-slate-900/50 px-3 py-1.5 rounded-xl border dark:border-slate-700">
-             <span className="text-[10px] font-black text-gray-400 uppercase">To</span>
-             <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className="bg-transparent text-xs font-bold outline-none dark:text-white" />
+
+          <div className="flex items-center gap-2 w-full lg:w-auto">
+            <div className="flex flex-1 items-center bg-gray-50 dark:bg-slate-900/50 rounded-2xl border dark:border-slate-700 p-0.5 sm:p-1 overflow-hidden">
+               <div className="flex items-center gap-1.5 px-2 sm:px-3 py-1.5 flex-1">
+                  <span className="text-[8px] sm:text-[9px] font-black text-gray-400 uppercase tracking-widest">From</span>
+                  <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="bg-transparent text-[10px] sm:text-[11px] font-bold outline-none dark:text-white w-full min-w-[75px]" />
+               </div>
+               <div className="w-px h-5 bg-gray-200 dark:bg-slate-700"></div>
+               <div className="flex items-center gap-1.5 px-2 sm:px-3 py-1.5 flex-1">
+                  <span className="text-[8px] sm:text-[9px] font-black text-gray-400 uppercase tracking-widest">To</span>
+                  <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className="bg-transparent text-[10px] sm:text-[11px] font-bold outline-none dark:text-white w-full min-w-[75px]" />
+               </div>
+            </div>
+            
+            <div className="flex items-center gap-2 shrink-0">
+               {(startDate || endDate) && (
+                 <button onClick={() => { setStartDate(''); setEndDate(''); }} className="text-[10px] font-black text-red-500 uppercase px-1 hover:underline transition-all hidden sm:block">Clear</button>
+               )}
+               <button 
+                 onClick={handleExportExcel}
+                 disabled={sales.length === 0}
+                 title="Export Sales Report"
+                 className="w-10 h-10 flex items-center justify-center bg-green-600 hover:bg-green-700 text-white rounded-xl transition-all shadow-lg shadow-green-600/20 disabled:opacity-50 shrink-0"
+               >
+                 <FileUp size={18} />
+               </button>
+            </div>
           </div>
-          
-          {(startDate || endDate) && (
-            <button onClick={() => { setStartDate(''); setEndDate(''); }} className="text-[10px] font-black text-red-500 uppercase hover:underline px-2">Clear</button>
-          )}
-
-          <div className="w-px h-6 bg-gray-200 dark:bg-slate-700 mx-1"></div>
-
-          <button 
-            onClick={handleExportExcel}
-            disabled={sales.length === 0}
-            className="flex items-center gap-2 px-5 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-lg shadow-green-600/20 disabled:opacity-50"
-          >
-            <FileUp size={16} /> Export Excel
-          </button>
         </div>
       </div>
 

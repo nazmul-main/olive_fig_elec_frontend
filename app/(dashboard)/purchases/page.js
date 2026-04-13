@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import api from '@/lib/axios';
 import toast from 'react-hot-toast';
 import useAuthStore from '@/store/useAuthStore';
@@ -10,8 +10,11 @@ import * as XLSX from 'xlsx';
 export default function PurchasesPage() {
   const { user } = useAuthStore();
   const [purchases, setPurchases] = useState([]);
-  const [suppliers, setSuppliers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [suppliers, setSuppliers] = useState([]);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [filterSupplier, setFilterSupplier] = useState('');
   const [startDate, setStartDate] = useState('');
@@ -38,25 +41,64 @@ export default function PurchasesPage() {
     purchaseDate: new Date().toISOString().split('T')[0]
   });
 
-  useEffect(() => { fetchData(); }, [startDate, endDate]);
+  useEffect(() => { 
+    setPage(1);
+    setPurchases([]);
+    setHasMore(true);
+    fetchData(1, true); 
+  }, [startDate, endDate]);
 
-  const fetchData = async () => {
+  const fetchData = async (pageNumber = 1, isInitial = false) => {
     try {
-      setLoading(true);
+      if (isInitial) setLoading(true);
+      else setLoadingMore(true);
+
       const [pRes, sRes] = await Promise.all([
         api.get('/purchases', { 
             params: { 
-                limit: 500, 
+                limit: 20, 
+                page: pageNumber,
                 startDate: startDate || undefined, 
                 endDate: endDate || undefined 
             } 
         }),
-        api.get('/suppliers'),
+        isInitial ? api.get('/suppliers') : Promise.resolve({ data: { success: true, suppliers: [] } }),
       ]);
-      if (pRes.data.success) setPurchases(pRes.data.purchases);
-      if (sRes.data.success) setSuppliers(sRes.data.suppliers);
+
+      if (pRes.data.success) {
+        if (isInitial) {
+          setPurchases(pRes.data.purchases);
+        } else {
+          setPurchases(prev => [...prev, ...pRes.data.purchases]);
+        }
+        setHasMore(pRes.data.purchases.length === 20);
+      }
+      
+      if (isInitial && sRes.data.success) setSuppliers(sRes.data.suppliers);
     } catch { toast.error('Failed to load data'); }
-    finally { setLoading(false); }
+    finally { 
+      setLoading(false); 
+      setLoadingMore(false);
+    }
+  };
+
+  // Intersection Observer to trigger more loads
+  const observer = useRef();
+  const lastElementRef = (node) => {
+    if (loading || loadingMore) return;
+    if (observer.current) observer.current.disconnect();
+    
+    observer.current = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting && hasMore) {
+        setPage(prev => {
+           const nextPage = prev + 1;
+           fetchData(nextPage);
+           return nextPage;
+        });
+      }
+    });
+
+    if (node) observer.current.observe(node);
   };
 
   const handleAddItem = () => {
@@ -101,7 +143,7 @@ export default function PurchasesPage() {
         setSupplierData({ id: '', name: '', phone: '', address: '', isNew: false });
         setItems([{ id: Date.now(), productCode: '', productName: '', category: '', quantity: 1, purchasePrice: '', salePrice: '' }]);
         setPaymentData({ paidAmount: 0, note: '', purchaseDate: new Date().toISOString().split('T')[0] });
-        fetchData();
+        fetchData(1, true);
       }
     } catch (e) {
       toast.error(e.response?.data?.message || 'Error recording purchase');
@@ -110,9 +152,25 @@ export default function PurchasesPage() {
     }
   };
 
-  const handleExportExcel = () => {
+  const handleExportExcel = async () => {
+    const toastId = toast.loading('Preparing full purchase report...');
     try {
-      const exportData = purchases.map(p => ({
+      // Fetch all records for current filters
+      const { data } = await api.get('/purchases', {
+        params: { 
+          limit: 0, 
+          startDate: startDate || undefined, 
+          endDate: endDate || undefined 
+        }
+      });
+
+      if (!data.success || !data.purchases) {
+        throw new Error('Failed to fetch data');
+      }
+
+      const reportData = data.purchases.length > 0 ? data.purchases : purchases;
+
+      const exportData = reportData.map(p => ({
         'Date': new Date(p.purchaseDate).toLocaleDateString(),
         'Supplier': p.supplierName,
         'Brand': p.brand,
@@ -133,9 +191,10 @@ export default function PurchasesPage() {
       XLSX.utils.book_append_sheet(workbook, worksheet, "Purchase History");
 
       XLSX.writeFile(workbook, `Purchase_Report_${new Date().toISOString().split('T')[0]}.xlsx`);
-      toast.success('Excel report downloaded!');
+      toast.success('Purchase report downloaded!', { id: toastId });
     } catch (e) {
-      toast.error('Failed to export Excel');
+      console.error('Export Error:', e);
+      toast.error('Failed to export report', { id: toastId });
     }
   };
 
@@ -414,52 +473,61 @@ export default function PurchasesPage() {
         {/* Purchase History Table - FULL WIDTH NOW */}
         <div className="lg:col-span-12">
           <div className="bg-white dark:bg-slate-800 rounded-3xl border dark:border-slate-700 shadow-xl overflow-hidden mt-6">
-            <div className="p-6 border-b dark:border-slate-700 flex flex-col md:flex-row items-center justify-between gap-4 bg-gray-50/50 dark:bg-slate-800/50">
-              <h2 className="text-xl font-black text-gray-900 dark:text-white uppercase tracking-tight">Purchase History</h2>
-              
-              <div className="flex flex-wrap items-center gap-3">
-                <div className="flex items-center gap-2 bg-white dark:bg-slate-700 px-3 py-1.5 rounded-xl border dark:border-slate-600 shadow-sm">
-                   <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">From</span>
-                   <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="bg-transparent text-[10px] font-bold outline-none dark:text-white" />
-                </div>
-                <div className="flex items-center gap-2 bg-white dark:bg-slate-700 px-3 py-1.5 rounded-xl border dark:border-slate-600 shadow-sm">
-                   <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">To</span>
-                   <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className="bg-transparent text-[10px] font-bold outline-none dark:text-white" />
+            <div className="p-5 md:p-6 border-b dark:border-slate-700 bg-gray-50/50 dark:bg-slate-800/50">
+              <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
+                <div>
+                  <h2 className="text-xl font-black text-gray-900 dark:text-white uppercase tracking-tight leading-none">Purchase History</h2>
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1.5">Incoming stock & supplier logs</p>
                 </div>
                 
-                {(startDate || endDate) && (
-                  <button onClick={() => { setStartDate(''); setEndDate(''); }} className="text-[9px] font-black text-red-500 uppercase px-2 hover:underline">Clear</button>
-                )}
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full lg:w-auto">
+                  <div className="flex items-center gap-2 w-full lg:w-auto">
+                    <div className="flex flex-1 items-center bg-white dark:bg-slate-700 rounded-2xl border dark:border-slate-600 p-0.5 sm:p-1 overflow-hidden shadow-sm">
+                      <div className="flex items-center gap-1.5 px-2 sm:px-3 py-1.5 flex-1">
+                         <span className="text-[8px] sm:text-[9px] font-black text-gray-400 uppercase tracking-widest">From</span>
+                         <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="bg-transparent text-[10px] sm:text-[11px] font-bold outline-none dark:text-white w-full min-w-[75px]" />
+                      </div>
+                      <div className="w-px h-5 bg-gray-200 dark:bg-slate-700"></div>
+                      <div className="flex items-center gap-1.5 px-2 sm:px-3 py-1.5 flex-1">
+                         <span className="text-[8px] sm:text-[9px] font-black text-gray-400 uppercase tracking-widest">To</span>
+                         <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className="bg-transparent text-[10px] sm:text-[11px] font-bold outline-none dark:text-white w-full min-w-[75px]" />
+                      </div>
+                    </div>
 
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
-                  <input
-                    type="text"
-                    placeholder="Search supplier..."
-                    value={filterSupplier}
-                    onChange={(e) => setFilterSupplier(e.target.value)}
-                    className="pl-9 pr-4 py-1.5 text-xs border-transparent bg-white dark:bg-slate-700 rounded-xl shadow-sm focus:ring-2 focus:ring-brand/20 outline-none w-48"
-                  />
+                    <div className="flex items-center gap-2 shrink-0">
+                      <div className="relative hidden md:block">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
+                        <input
+                          type="text"
+                          placeholder="Search..."
+                          value={filterSupplier}
+                          onChange={(e) => setFilterSupplier(e.target.value)}
+                          className="pl-9 pr-4 py-2 text-xs border-transparent bg-white dark:bg-slate-700 rounded-xl shadow-sm focus:ring-2 focus:ring-brand/20 outline-none w-40"
+                        />
+                      </div>
+
+                      <button 
+                        onClick={handleExportExcel}
+                        disabled={purchases.length === 0}
+                        title="Export Purchase Report"
+                        className="w-10 h-10 flex items-center justify-center bg-green-600 hover:bg-green-700 text-white rounded-xl transition-all shadow-lg shadow-green-600/20 disabled:opacity-50 shrink-0"
+                      >
+                        <FileUp size={18} />
+                      </button>
+                    </div>
+                  </div>
                 </div>
-
-                <button 
-                  onClick={handleExportExcel}
-                  disabled={purchases.length === 0}
-                  className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-lg shadow-green-600/20 disabled:opacity-50"
-                >
-                  <FileUp size={14} /> Export
-                </button>
               </div>
             </div>
+
             {loading ? (
-              <div className="flex justify-center py-12"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand"></div></div>
+              <div className="flex justify-center py-20"><div className="animate-spin rounded-full h-10 w-10 border-b-2 border-brand"></div></div>
             ) : filteredPurchases.length === 0 ? (
-              <div className="text-center py-16 text-gray-400">
+              <div className="text-center py-20 text-gray-400">
                 <div className="w-20 h-20 bg-gray-50 dark:bg-slate-900/50 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <PackagePlus size={40} className="opacity-20" />
+                  <PackagePlus size={40} className="opacity-10" />
                 </div>
-                <p className="font-bold">No purchase records found</p>
-                <p className="text-xs">Incoming stock will be listed here after entry</p>
+                <p className="font-bold uppercase tracking-widest text-xs">No records found</p>
               </div>
             ) : (
               <div className="overflow-x-auto">
@@ -469,37 +537,53 @@ export default function PurchasesPage() {
                       <th className="px-6 py-4">Date</th>
                       <th className="px-6 py-4">Supplier</th>
                       <th className="px-6 py-4">Product Details</th>
-                      <th className="px-6 py-4">Qty</th>
+                      <th className="px-6 py-4 text-center">Qty</th>
                       <th className="px-6 py-4">Cost ৳</th>
                       <th className="px-6 py-4">Sale ৳</th>
                       <th className="px-6 py-4">Voucher</th>
                       <th className="px-6 py-4">Status</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-100 dark:divide-slate-700">
-                    {filteredPurchases.map((p) => (
-                      <tr key={p._id} className="hover:bg-brand/5 transition-colors group">
-                        <td className="px-6 py-4 text-xs font-bold text-gray-400 whitespace-nowrap">{new Date(p.purchaseDate).toLocaleDateString('en-GB')}</td>
+                  <tbody className="divide-y divide-gray-100 dark:divide-slate-700 text-xs">
+                    {filteredPurchases.map((p, idx) => (
+                      <tr 
+                        key={p._id} 
+                        ref={idx === filteredPurchases.length - 1 ? lastElementRef : null}
+                        className="hover:bg-brand/5 transition-colors group"
+                      >
+                        <td className="px-6 py-4 font-bold text-gray-400 whitespace-nowrap">{new Date(p.purchaseDate).toLocaleDateString('en-GB')}</td>
                         <td className="px-6 py-4">
-                           <p className="text-sm font-black text-brand uppercase tracking-tighter">{p.supplierName}</p>
+                           <p className="font-black text-brand uppercase tracking-tighter">{p.supplierName}</p>
                         </td>
                         <td className="px-6 py-4">
-                           <p className="text-sm font-bold text-gray-900 dark:text-white">{p.productName}</p>
-                           <p className="text-[10px] font-mono text-gray-400">{p.productCode}</p>
+                           <p className="font-bold text-gray-900 dark:text-white">{p.productName}</p>
+                           <p className="text-[10px] font-mono text-gray-400 uppercase">{p.productCode}</p>
                         </td>
-                        <td className="px-6 py-3 text-sm font-black text-gray-900 dark:text-white">{p.quantity}</td>
-                        <td className="px-6 py-3 text-sm font-medium text-gray-500">৳{p.purchasePrice.toLocaleString()}</td>
-                        <td className="px-6 py-3 text-sm font-medium text-gray-500">৳{p.salePrice.toLocaleString()}</td>
-                        <td className="px-6 py-3 font-black text-gray-900 dark:text-white">৳{p.totalAmount.toLocaleString()}</td>
-                        <td className="px-6 py-3">
-                           <span className={`text-[9px] font-black uppercase px-2 py-1 rounded-full ${p.dueAmount > 0 ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'}`}>
-                              {p.dueAmount > 0 ? 'Partial' : 'Full Paid'}
+                        <td className="px-6 py-4 text-center font-black text-gray-900 dark:text-white bg-gray-50/30 dark:bg-slate-900/20">{p.quantity}</td>
+                        <td className="px-6 py-4 font-medium text-gray-500">৳{p.purchasePrice.toLocaleString()}</td>
+                        <td className="px-6 py-4 font-medium text-gray-500">৳{p.salePrice.toLocaleString()}</td>
+                        <td className="px-6 py-4 font-black text-gray-900 dark:text-white">৳{p.totalAmount.toLocaleString()}</td>
+                        <td className="px-6 py-4">
+                           <span className={`text-[9px] font-black uppercase px-2.5 py-1 rounded-full ${p.dueAmount > 0 ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'}`}>
+                              {p.dueAmount > 0 ? 'Partial' : 'Paid'}
                            </span>
                         </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
+                
+                <div className="h-16 flex items-center justify-center border-t dark:border-slate-700 bg-gray-50/30 dark:bg-slate-900/20">
+                   {loadingMore && (
+                     <div className="flex items-center gap-2 text-gray-400">
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-brand"></div>
+                        <span className="font-black uppercase tracking-widest text-[9px]">Loading more records...</span>
+                     </div>
+                   )}
+                   {!hasMore && filteredPurchases.length > 0 && (
+                     <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest bg-white dark:bg-slate-800 px-4 py-1.5 rounded-full border dark:border-slate-700 shadow-sm">End of history</span>
+                   )}
+                </div>
               </div>
             )}
           </div>
