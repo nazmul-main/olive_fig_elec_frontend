@@ -12,7 +12,7 @@ export default function InventoryPage() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
-  
+
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
 
@@ -53,13 +53,13 @@ export default function InventoryPage() {
   const lastElementRef = useCallback(node => {
     if (loading || loadingMore) return;
     if (observer.current) observer.current.disconnect();
-    
+
     observer.current = new IntersectionObserver(entries => {
       if (entries[0].isIntersecting && hasMore) {
         setPage(prev => {
-           const nextPage = prev + 1;
-           fetchInventory(nextPage);
-           return nextPage;
+          const nextPage = prev + 1;
+          fetchInventory(nextPage);
+          return nextPage;
         });
       }
     });
@@ -75,10 +75,10 @@ export default function InventoryPage() {
       // Fetch all data from the backend for the current filters
       // We pass limit: 0 to get all records matching the filters
       const { data } = await api.get('/dashboard/inventory', {
-        params: { 
-          limit: 0, 
-          startDate: startDate || undefined, 
-          endDate: endDate || undefined 
+        params: {
+          limit: 0,
+          startDate: startDate || undefined,
+          endDate: endDate || undefined
         }
       });
 
@@ -116,11 +116,13 @@ export default function InventoryPage() {
   const columns = [
     { header: 'Date', render: (row) => new Date(row.createdAt).toLocaleString() },
     { header: 'Product', render: (row) => `${row.productName} (${row.product?.code})` },
-    { header: 'Type', render: (row) => (
-       <span className={`px-2 py-1 rounded-full text-xs font-medium ${row.type === 'IN' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-         {row.type}
-       </span>
-    )},
+    {
+      header: 'Type', render: (row) => (
+        <span className={`px-2 py-1 rounded-full text-xs font-medium ${row.type === 'IN' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+          {row.type}
+        </span>
+      )
+    },
     { header: 'Qty', accessor: 'quantity' },
     { header: 'Reason', render: (row) => <span className="capitalize">{row.reason}</span> },
     { header: 'Balance', render: (row) => `${row.previousStock} → ${row.newStock}` },
@@ -133,7 +135,7 @@ export default function InventoryPage() {
         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 bg-indigo-500/10 text-indigo-600 rounded-2xl flex items-center justify-center shrink-0">
-               <Warehouse size={24} />
+              <Warehouse size={24} />
             </div>
             <div>
               <h1 className="text-xl md:text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tight leading-none">Stock Movement</h1>
@@ -145,37 +147,37 @@ export default function InventoryPage() {
             {/* Date Filters Group - Compact for Mobile */}
             <div className="flex flex-1 items-center bg-gray-50 dark:bg-slate-900/50 rounded-2xl border dark:border-slate-700 p-0.5 sm:p-1 overflow-hidden">
               <div className="flex items-center gap-1.5 px-2 sm:px-3 py-1.5 flex-1">
-                 <span className="text-[8px] sm:text-[9px] font-black text-gray-400 uppercase tracking-widest">From</span>
-                 <input 
-                   type="date" 
-                   value={startDate} 
-                   onChange={e => setStartDate(e.target.value)} 
-                   className="bg-transparent text-[10px] sm:text-[11px] font-bold outline-none dark:text-white w-full min-w-[75px]" 
-                 />
+                <span className="text-[8px] sm:text-[9px] font-black text-gray-400 uppercase tracking-widest">From</span>
+                <input
+                  type="date"
+                  value={startDate}
+                  onChange={e => setStartDate(e.target.value)}
+                  className="bg-transparent text-[10px] sm:text-[11px] font-bold outline-none dark:text-white w-full min-w-[75px]"
+                />
               </div>
               <div className="w-px h-5 bg-gray-200 dark:bg-slate-700"></div>
               <div className="flex items-center gap-1.5 px-2 sm:px-3 py-1.5 flex-1">
-                 <span className="text-[8px] sm:text-[9px] font-black text-gray-400 uppercase tracking-widest">To</span>
-                 <input 
-                   type="date" 
-                   value={endDate} 
-                   onChange={e => setEndDate(e.target.value)} 
-                   className="bg-transparent text-[10px] sm:text-[11px] font-bold outline-none dark:text-white w-full min-w-[75px]" 
-                 />
+                <span className="text-[8px] sm:text-[9px] font-black text-gray-400 uppercase tracking-widest">To</span>
+                <input
+                  type="date"
+                  value={endDate}
+                  onChange={e => setEndDate(e.target.value)}
+                  className="bg-transparent text-[10px] sm:text-[11px] font-bold outline-none dark:text-white w-full min-w-[75px]"
+                />
               </div>
             </div>
-            
+
             <div className="flex items-center gap-2 shrink-0">
               {(startDate || endDate) && (
-                <button 
-                  onClick={() => { setStartDate(''); setEndDate(''); }} 
+                <button
+                  onClick={() => { setStartDate(''); setEndDate(''); }}
                   className="text-[10px] font-black text-red-500 uppercase px-1 hover:underline transition-all hidden sm:block"
                 >
                   Clear
                 </button>
               )}
 
-              <button 
+              <button
                 onClick={handleExportExcel}
                 disabled={history.length === 0}
                 title="Export Report"
@@ -195,18 +197,18 @@ export default function InventoryPage() {
       ) : (
         <div className="bg-white dark:bg-slate-800 rounded-3xl border dark:border-slate-700 shadow-xl overflow-hidden transition-all text-xs">
           <DataTable columns={columns} data={history} disablePagination={true} />
-          
+
           {/* Target for Infinite Scroll */}
           <div ref={lastElementRef} className="h-10 flex items-center justify-center">
-             {loadingMore && (
-               <div className="flex items-center gap-2 text-gray-400">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-brand"></div>
-                  <span className="font-bold uppercase tracking-widest text-[10px]">Loading more...</span>
-               </div>
-             )}
-             {!hasMore && history.length > 0 && (
-               <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest bg-gray-50 dark:bg-slate-900/50 px-4 py-1 rounded-full">End of records</span>
-             )}
+            {loadingMore && (
+              <div className="flex items-center gap-2 text-gray-400">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-brand"></div>
+                <span className="font-bold uppercase tracking-widest text-[10px]">Loading more...</span>
+              </div>
+            )}
+            {!hasMore && history.length > 0 && (
+              <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest bg-gray-50 dark:bg-slate-900/50 px-4 py-1 rounded-full">End of records</span>
+            )}
           </div>
         </div>
       )}

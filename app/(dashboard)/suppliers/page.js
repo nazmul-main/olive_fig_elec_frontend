@@ -105,7 +105,7 @@ export default function SuppliersPage() {
         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 bg-indigo-500/10 text-indigo-600 rounded-2xl flex items-center justify-center shrink-0">
-               <Truck size={24} />
+              <Truck size={24} />
             </div>
             <div>
               <h1 className="text-xl md:text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tight leading-none">Suppliers Ledger</h1>
@@ -114,24 +114,24 @@ export default function SuppliersPage() {
           </div>
 
           <div className="flex items-center gap-2 w-full lg:w-auto shrink-0 justify-end">
-             <button 
-               onClick={handleExportExcel}
-               disabled={suppliers.length === 0}
-               title="Export Supplier Report"
-               className="w-10 h-10 flex items-center justify-center bg-green-600 hover:bg-green-700 text-white rounded-xl transition-all shadow-lg shadow-green-600/20 disabled:opacity-50 shrink-0"
-             >
-               <FileUp size={18} />
-             </button>
+            <button
+              onClick={handleExportExcel}
+              disabled={suppliers.length === 0}
+              title="Export Supplier Report"
+              className="w-10 h-10 flex items-center justify-center bg-green-600 hover:bg-green-700 text-white rounded-xl transition-all shadow-lg shadow-green-600/20 disabled:opacity-50 shrink-0"
+            >
+              <FileUp size={18} />
+            </button>
 
-             {(user?.role === 'admin' || user?.role === 'manager') && (
-               <button 
-                onClick={() => handleOpenModal()} 
+            {(user?.role === 'admin' || user?.role === 'manager') && (
+              <button
+                onClick={() => handleOpenModal()}
                 title="Add New Supplier"
                 className="flex items-center justify-center gap-2 px-6 h-10 bg-brand hover:bg-brand-dark text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-lg shadow-brand/20"
-               >
-                 <Plus size={16} /> <span className="hidden sm:inline">Add New</span>
-               </button>
-             )}
+              >
+                <Plus size={16} /> <span className="hidden sm:inline">Add New</span>
+              </button>
+            )}
           </div>
         </div>
       </div>

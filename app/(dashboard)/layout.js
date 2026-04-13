@@ -39,7 +39,7 @@ export default function DashboardLayout({ children }) {
     <div className="flex bg-gray-50 dark:bg-slate-900 h-screen overflow-hidden transition-colors duration-300">
       {/* Sidebar for Desktop & Mobile */}
       <Sidebar isOpen={isSidebarOpen} setIsOpen={setSidebarOpen} />
-      
+
       <div className="flex flex-col w-0 flex-1 overflow-hidden transition-all duration-300">
         <Header isOpen={isSidebarOpen} onMenuClick={() => setSidebarOpen(!isSidebarOpen)} />
         <main className="flex-1 relative z-0 overflow-y-auto focus:outline-none">

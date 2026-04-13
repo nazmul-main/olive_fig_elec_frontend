@@ -40,9 +40,9 @@ export default function ExpensesPage() {
       else setLoadingMore(true);
 
       const { data } = await api.get('/expenses', {
-        params: { 
-          startDate: startDate || undefined, 
-          endDate: endDate || undefined, 
+        params: {
+          startDate: startDate || undefined,
+          endDate: endDate || undefined,
           limit: 20,
           page: pageNumber
         }
@@ -68,13 +68,13 @@ export default function ExpensesPage() {
   const lastElementRef = (node) => {
     if (loading || loadingMore) return;
     if (observer.current) observer.current.disconnect();
-    
+
     observer.current = new IntersectionObserver(entries => {
       if (entries[0].isIntersecting && hasMore) {
         setPage(prev => {
-           const nextPage = prev + 1;
-           fetchExpenses(nextPage);
-           return nextPage;
+          const nextPage = prev + 1;
+          fetchExpenses(nextPage);
+          return nextPage;
         });
       }
     });
@@ -100,8 +100,8 @@ export default function ExpensesPage() {
         await api.put(`/expenses/${editId}`, formData);
         toast.success('Expense updated');
       } else {
-         await api.post('/expenses', formData);
-         toast.success('Expense added');
+        await api.post('/expenses', formData);
+        toast.success('Expense added');
       }
       setIsModalOpen(false);
       fetchExpenses(1, true);
@@ -115,10 +115,10 @@ export default function ExpensesPage() {
     try {
       // Fetch all records from the server
       const { data } = await api.get('/expenses', {
-        params: { 
+        params: {
           limit: 0,
-          startDate: startDate || undefined, 
-          endDate: endDate || undefined 
+          startDate: startDate || undefined,
+          endDate: endDate || undefined
         }
       });
 
@@ -188,52 +188,52 @@ export default function ExpensesPage() {
         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 bg-red-500/10 text-red-600 rounded-2xl flex items-center justify-center shrink-0">
-               <Wallet size={24} />
+              <Wallet size={24} />
             </div>
             <div>
               <h1 className="text-xl md:text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tight leading-none">Financial Expenses</h1>
               <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1.5">
-                 Total (Month): <span className="text-red-500 font-black">৳{monthlyTotal.toLocaleString()}</span>
+                Total (Month): <span className="text-red-500 font-black">৳{monthlyTotal.toLocaleString()}</span>
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-2 w-full lg:w-auto">
             <div className="flex flex-1 items-center bg-gray-50 dark:bg-slate-900/50 rounded-2xl border dark:border-slate-700 p-0.5 sm:p-1 overflow-hidden">
-               <div className="flex items-center gap-1.5 px-2 sm:px-3 py-1.5 flex-1">
-                  <span className="text-[8px] sm:text-[9px] font-black text-gray-400 uppercase tracking-widest">From</span>
-                  <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="bg-transparent text-[10px] sm:text-[11px] font-bold outline-none dark:text-white w-full min-w-[75px]" />
-               </div>
-               <div className="w-px h-5 bg-gray-200 dark:bg-slate-700"></div>
-               <div className="flex items-center gap-1.5 px-2 sm:px-3 py-1.5 flex-1">
-                  <span className="text-[8px] sm:text-[9px] font-black text-gray-400 uppercase tracking-widest">To</span>
-                  <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className="bg-transparent text-[10px] sm:text-[11px] font-bold outline-none dark:text-white w-full min-w-[75px]" />
-               </div>
+              <div className="flex items-center gap-1.5 px-2 sm:px-3 py-1.5 flex-1">
+                <span className="text-[8px] sm:text-[9px] font-black text-gray-400 uppercase tracking-widest">From</span>
+                <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="bg-transparent text-[10px] sm:text-[11px] font-bold outline-none dark:text-white w-full min-w-[75px]" />
+              </div>
+              <div className="w-px h-5 bg-gray-200 dark:bg-slate-700"></div>
+              <div className="flex items-center gap-1.5 px-2 sm:px-3 py-1.5 flex-1">
+                <span className="text-[8px] sm:text-[9px] font-black text-gray-400 uppercase tracking-widest">To</span>
+                <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className="bg-transparent text-[10px] sm:text-[11px] font-bold outline-none dark:text-white w-full min-w-[75px]" />
+              </div>
             </div>
-            
-            <div className="flex items-center gap-2 shrink-0">
-               {(startDate || endDate) && (
-                 <button onClick={() => { setStartDate(''); setEndDate(''); }} className="text-[10px] font-black text-red-500 uppercase px-1 hover:underline transition-all hidden sm:block">Clear</button>
-               )}
-               
-               <button 
-                 onClick={handleExportExcel}
-                 disabled={expenses.length === 0}
-                 title="Export Expense Report"
-                 className="w-10 h-10 flex items-center justify-center bg-green-600 hover:bg-green-700 text-white rounded-xl transition-all shadow-lg shadow-green-600/20 disabled:opacity-50 shrink-0"
-               >
-                 <FileUp size={18} />
-               </button>
 
-               {(user?.role === 'admin' || user?.role === 'manager') && (
-                 <button 
-                  onClick={() => handleOpenModal()} 
+            <div className="flex items-center gap-2 shrink-0">
+              {(startDate || endDate) && (
+                <button onClick={() => { setStartDate(''); setEndDate(''); }} className="text-[10px] font-black text-red-500 uppercase px-1 hover:underline transition-all hidden sm:block">Clear</button>
+              )}
+
+              <button
+                onClick={handleExportExcel}
+                disabled={expenses.length === 0}
+                title="Export Expense Report"
+                className="w-10 h-10 flex items-center justify-center bg-green-600 hover:bg-green-700 text-white rounded-xl transition-all shadow-lg shadow-green-600/20 disabled:opacity-50 shrink-0"
+              >
+                <FileUp size={18} />
+              </button>
+
+              {(user?.role === 'admin' || user?.role === 'manager') && (
+                <button
+                  onClick={() => handleOpenModal()}
                   title="Add New Expense"
                   className="w-10 h-10 flex items-center justify-center bg-brand hover:bg-brand-dark text-white rounded-xl transition-all shadow-lg shadow-brand/20 shrink-0"
-                 >
-                   <Plus size={20} />
-                 </button>
-               )}
+                >
+                  <Plus size={20} />
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -245,24 +245,24 @@ export default function ExpensesPage() {
         </div>
       ) : (
         <div className="bg-white dark:bg-slate-800 rounded-3xl border dark:border-slate-700 shadow-xl overflow-hidden transition-all text-xs">
-          <DataTable 
-            columns={columns} 
-            data={expenses} 
-            onEdit={(user?.role === 'admin' || user?.role === 'manager') ? handleOpenModal : null} 
-            onDelete={user?.role === 'admin' ? handleDeleteClick : null} 
+          <DataTable
+            columns={columns}
+            data={expenses}
+            onEdit={(user?.role === 'admin' || user?.role === 'manager') ? handleOpenModal : null}
+            onDelete={user?.role === 'admin' ? handleDeleteClick : null}
             disablePagination={true}
           />
-          
+
           <div ref={lastElementRef} className="h-16 flex items-center justify-center border-t dark:border-slate-700 bg-gray-50/50 dark:bg-slate-900/20">
-             {loadingMore && (
-               <div className="flex items-center gap-2 text-gray-400">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-brand"></div>
-                  <span className="font-black uppercase tracking-widest text-[9px]">Loading more...</span>
-               </div>
-             )}
-             {!hasMore && expenses.length > 0 && (
-               <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest bg-white dark:bg-slate-800 px-4 py-1.5 rounded-full border dark:border-slate-700 shadow-sm">End of expenses</span>
-             )}
+            {loadingMore && (
+              <div className="flex items-center gap-2 text-gray-400">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-brand"></div>
+                <span className="font-black uppercase tracking-widest text-[9px]">Loading more...</span>
+              </div>
+            )}
+            {!hasMore && expenses.length > 0 && (
+              <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest bg-white dark:bg-slate-800 px-4 py-1.5 rounded-full border dark:border-slate-700 shadow-sm">End of expenses</span>
+            )}
           </div>
         </div>
       )}
@@ -271,32 +271,32 @@ export default function ExpensesPage() {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-slate-300">Title</label>
-            <input type="text" required value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} className="mt-1 block w-full border border-gray-300 dark:border-slate-600 rounded-md shadow-sm py-2 px-3 focus:ring-brand focus:border-brand sm:text-sm bg-white dark:bg-slate-700 text-gray-900 dark:text-white transition-colors" />
+            <input type="text" required value={formData.title} onChange={e => setFormData({ ...formData, title: e.target.value })} className="mt-1 block w-full border border-gray-300 dark:border-slate-600 rounded-md shadow-sm py-2 px-3 focus:ring-brand focus:border-brand sm:text-sm bg-white dark:bg-slate-700 text-gray-900 dark:text-white transition-colors" />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-slate-300">Amount (৳)</label>
-              <input type="number" min="0" required value={formData.amount} onChange={e => setFormData({...formData, amount: Number(e.target.value)})} className="mt-1 block w-full border border-gray-300 dark:border-slate-600 rounded-md shadow-sm py-2 px-3 focus:ring-brand focus:border-brand sm:text-sm bg-white dark:bg-slate-700 text-gray-900 dark:text-white transition-colors" />
+              <input type="number" min="0" required value={formData.amount} onChange={e => setFormData({ ...formData, amount: Number(e.target.value) })} className="mt-1 block w-full border border-gray-300 dark:border-slate-600 rounded-md shadow-sm py-2 px-3 focus:ring-brand focus:border-brand sm:text-sm bg-white dark:bg-slate-700 text-gray-900 dark:text-white transition-colors" />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-slate-300">Date</label>
-              <input type="date" required value={formData.date} onChange={e => setFormData({...formData, date: e.target.value})} className="mt-1 block w-full border border-gray-300 dark:border-slate-600 rounded-md shadow-sm py-2 px-4 focus:ring-brand focus:border-brand sm:text-sm bg-white dark:bg-slate-700 text-gray-900 dark:text-white transition-colors" />
+              <input type="date" required value={formData.date} onChange={e => setFormData({ ...formData, date: e.target.value })} className="mt-1 block w-full border border-gray-300 dark:border-slate-600 rounded-md shadow-sm py-2 px-4 focus:ring-brand focus:border-brand sm:text-sm bg-white dark:bg-slate-700 text-gray-900 dark:text-white transition-colors" />
             </div>
           </div>
           <div>
-             <label className="block text-sm font-medium text-gray-700 dark:text-slate-300">Category</label>
-             <select value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})} className="mt-1 block w-full border border-gray-300 dark:border-slate-600 rounded-md shadow-sm py-2 px-3 focus:ring-brand focus:border-brand sm:text-sm bg-white dark:bg-slate-700 text-gray-900 dark:text-white transition-colors">
-               <option value="salary">Salary</option>
-               <option value="electricity">Electricity</option>
-               <option value="rent">Rent</option>
-               <option value="maintenance">Maintenance</option>
-               <option value="marketing">Marketing</option>
-               <option value="others">Others</option>
-             </select>
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300">Category</label>
+            <select value={formData.category} onChange={e => setFormData({ ...formData, category: e.target.value })} className="mt-1 block w-full border border-gray-300 dark:border-slate-600 rounded-md shadow-sm py-2 px-3 focus:ring-brand focus:border-brand sm:text-sm bg-white dark:bg-slate-700 text-gray-900 dark:text-white transition-colors">
+              <option value="salary">Salary</option>
+              <option value="electricity">Electricity</option>
+              <option value="rent">Rent</option>
+              <option value="maintenance">Maintenance</option>
+              <option value="marketing">Marketing</option>
+              <option value="others">Others</option>
+            </select>
           </div>
           <div>
-             <label className="block text-sm font-medium text-gray-700 dark:text-slate-300">Note (Optional)</label>
-             <textarea value={formData.note} onChange={e => setFormData({...formData, note: e.target.value})} className="mt-1 block w-full border border-gray-300 dark:border-slate-600 rounded-md shadow-sm py-2 px-3 focus:ring-brand focus:border-brand sm:text-sm bg-white dark:bg-slate-700 text-gray-900 dark:text-white transition-colors" rows="3"></textarea>
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300">Note (Optional)</label>
+            <textarea value={formData.note} onChange={e => setFormData({ ...formData, note: e.target.value })} className="mt-1 block w-full border border-gray-300 dark:border-slate-600 rounded-md shadow-sm py-2 px-3 focus:ring-brand focus:border-brand sm:text-sm bg-white dark:bg-slate-700 text-gray-900 dark:text-white transition-colors" rows="3"></textarea>
           </div>
           <div className="mt-5">
             <button type="submit" className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-brand text-base font-medium text-white hover:bg-brand-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand sm:text-sm transition-colors">

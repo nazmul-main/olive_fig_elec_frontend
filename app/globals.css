@@ -3,8 +3,10 @@
 @import "tailwindcss/utilities";
 
 :root {
-  --foreground-rgb: 15, 23, 42;    /* Slate 900 */
-  --background-start-rgb: 248, 250, 252; /* Slate 50 */
+  --foreground-rgb: 15, 23, 42;
+  /* Slate 900 */
+  --background-start-rgb: 248, 250, 252;
+  /* Slate 50 */
   --background-end-rgb: 248, 250, 252;
 }
 
@@ -45,9 +47,11 @@ body {
     background: white;
     color: black;
   }
+
   .no-print {
     display: none !important;
   }
+
   .print-only {
     display: block !important;
   }

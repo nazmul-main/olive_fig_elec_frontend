@@ -35,11 +35,11 @@ export default function SalesHistoryPage() {
       else setLoadingMore(true);
 
       const { data } = await api.get('/sales', {
-        params: { 
-          limit: 20, 
+        params: {
+          limit: 20,
           page: pageNumber,
-          startDate: startDate || undefined, 
-          endDate: endDate || undefined 
+          startDate: startDate || undefined,
+          endDate: endDate || undefined
         }
       });
       if (data.success) {
@@ -62,13 +62,13 @@ export default function SalesHistoryPage() {
   const lastElementRef = useCallback(node => {
     if (loading || loadingMore) return;
     if (observer.current) observer.current.disconnect();
-    
+
     observer.current = new IntersectionObserver(entries => {
       if (entries[0].isIntersecting && hasMore) {
         setPage(prev => {
-           const nextPage = prev + 1;
-           fetchSales(nextPage);
-           return nextPage;
+          const nextPage = prev + 1;
+          fetchSales(nextPage);
+          return nextPage;
         });
       }
     });
@@ -110,10 +110,10 @@ export default function SalesHistoryPage() {
     try {
       // Fetch all records from the server for the current filters
       const { data } = await api.get('/sales', {
-        params: { 
-          limit: 0, 
-          startDate: startDate || undefined, 
-          endDate: endDate || undefined 
+        params: {
+          limit: 0,
+          startDate: startDate || undefined,
+          endDate: endDate || undefined
         }
       });
 
@@ -143,7 +143,7 @@ export default function SalesHistoryPage() {
       XLSX.utils.book_append_sheet(workbook, worksheet, "Sales History");
 
       const max_width = exportData.reduce((w, r) => Math.max(w, r.Customer?.length || 0), 10);
-      worksheet["!cols"] = [ { wch: 15 }, { wch: 12 }, { wch: max_width + 5 }, { wch: 15 }, { wch: 10 }, { wch: 10 }, { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 15 }, { wch: 12 }, { wch: 15 } ];
+      worksheet["!cols"] = [{ wch: 15 }, { wch: 12 }, { wch: max_width + 5 }, { wch: 15 }, { wch: 10 }, { wch: 10 }, { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 15 }, { wch: 12 }, { wch: 15 }];
 
       XLSX.writeFile(workbook, `Sales_Report_${new Date().toISOString().split('T')[0]}.xlsx`);
       toast.success('Sales report downloaded!', { id: toastId });
@@ -162,10 +162,10 @@ export default function SalesHistoryPage() {
     { header: 'Due', render: (row) => <span className={`${row.dueAmount > 0 ? 'text-red-500' : 'text-gray-400'}`}>৳{(row.dueAmount || 0).toLocaleString()}</span> },
     { header: 'Method', render: (row) => <span className="capitalize">{row.paymentMethod}</span> },
     { header: 'Sold By', render: (row) => row.soldBy?.name },
-    { 
-      header: 'Actions', 
+    {
+      header: 'Actions',
       render: (row) => (
-        <button 
+        <button
           onClick={() => handlePrint(row)}
           className="p-2 text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-900/30 rounded-lg transition-colors"
           title="Print Invoice"
@@ -187,29 +187,29 @@ export default function SalesHistoryPage() {
 
           <div className="flex items-center gap-2 w-full lg:w-auto">
             <div className="flex flex-1 items-center bg-gray-50 dark:bg-slate-900/50 rounded-2xl border dark:border-slate-700 p-0.5 sm:p-1 overflow-hidden">
-               <div className="flex items-center gap-1.5 px-2 sm:px-3 py-1.5 flex-1">
-                  <span className="text-[8px] sm:text-[9px] font-black text-gray-400 uppercase tracking-widest">From</span>
-                  <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="bg-transparent text-[10px] sm:text-[11px] font-bold outline-none dark:text-white w-full min-w-[75px]" />
-               </div>
-               <div className="w-px h-5 bg-gray-200 dark:bg-slate-700"></div>
-               <div className="flex items-center gap-1.5 px-2 sm:px-3 py-1.5 flex-1">
-                  <span className="text-[8px] sm:text-[9px] font-black text-gray-400 uppercase tracking-widest">To</span>
-                  <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className="bg-transparent text-[10px] sm:text-[11px] font-bold outline-none dark:text-white w-full min-w-[75px]" />
-               </div>
+              <div className="flex items-center gap-1.5 px-2 sm:px-3 py-1.5 flex-1">
+                <span className="text-[8px] sm:text-[9px] font-black text-gray-400 uppercase tracking-widest">From</span>
+                <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="bg-transparent text-[10px] sm:text-[11px] font-bold outline-none dark:text-white w-full min-w-[75px]" />
+              </div>
+              <div className="w-px h-5 bg-gray-200 dark:bg-slate-700"></div>
+              <div className="flex items-center gap-1.5 px-2 sm:px-3 py-1.5 flex-1">
+                <span className="text-[8px] sm:text-[9px] font-black text-gray-400 uppercase tracking-widest">To</span>
+                <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className="bg-transparent text-[10px] sm:text-[11px] font-bold outline-none dark:text-white w-full min-w-[75px]" />
+              </div>
             </div>
-            
+
             <div className="flex items-center gap-2 shrink-0">
-               {(startDate || endDate) && (
-                 <button onClick={() => { setStartDate(''); setEndDate(''); }} className="text-[10px] font-black text-red-500 uppercase px-1 hover:underline transition-all hidden sm:block">Clear</button>
-               )}
-               <button 
-                 onClick={handleExportExcel}
-                 disabled={sales.length === 0}
-                 title="Export Sales Report"
-                 className="w-10 h-10 flex items-center justify-center bg-green-600 hover:bg-green-700 text-white rounded-xl transition-all shadow-lg shadow-green-600/20 disabled:opacity-50 shrink-0"
-               >
-                 <FileUp size={18} />
-               </button>
+              {(startDate || endDate) && (
+                <button onClick={() => { setStartDate(''); setEndDate(''); }} className="text-[10px] font-black text-red-500 uppercase px-1 hover:underline transition-all hidden sm:block">Clear</button>
+              )}
+              <button
+                onClick={handleExportExcel}
+                disabled={sales.length === 0}
+                title="Export Sales Report"
+                className="w-10 h-10 flex items-center justify-center bg-green-600 hover:bg-green-700 text-white rounded-xl transition-all shadow-lg shadow-green-600/20 disabled:opacity-50 shrink-0"
+              >
+                <FileUp size={18} />
+              </button>
             </div>
           </div>
         </div>
@@ -221,23 +221,23 @@ export default function SalesHistoryPage() {
         </div>
       ) : (
         <div className="bg-white dark:bg-slate-800 rounded-3xl border dark:border-slate-700 shadow-xl overflow-hidden transition-all text-xs">
-          <DataTable 
-            columns={columns} 
-            data={sales} 
+          <DataTable
+            columns={columns}
+            data={sales}
             onDelete={user?.role === 'admin' ? handleDeleteClick : null}
             disablePagination={true}
           />
-          
+
           <div ref={lastElementRef} className="h-10 flex items-center justify-center">
-             {loadingMore && (
-               <div className="flex items-center gap-2 text-gray-400">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-brand"></div>
-                  <span className="font-bold uppercase tracking-widest text-[10px]">Loading more...</span>
-               </div>
-             )}
-             {!hasMore && sales.length > 0 && (
-               <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest bg-gray-50 dark:bg-slate-900/50 px-4 py-1 rounded-full">End of records</span>
-             )}
+            {loadingMore && (
+              <div className="flex items-center gap-2 text-gray-400">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-brand"></div>
+                <span className="font-bold uppercase tracking-widest text-[10px]">Loading more...</span>
+              </div>
+            )}
+            {!hasMore && sales.length > 0 && (
+              <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest bg-gray-50 dark:bg-slate-900/50 px-4 py-1 rounded-full">End of records</span>
+            )}
           </div>
         </div>
       )}

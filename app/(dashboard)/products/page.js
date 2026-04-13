@@ -36,9 +36,9 @@ export default function ProductsPage() {
       else setLoadingMore(true);
 
       const { data } = await api.get('/products', {
-        params: { 
-            limit: 20, 
-            page: pageNumber 
+        params: {
+          limit: 20,
+          page: pageNumber
         }
       });
       if (data.success) {
@@ -61,13 +61,13 @@ export default function ProductsPage() {
   const lastElementRef = (node) => {
     if (loading || loadingMore) return;
     if (observer.current) observer.current.disconnect();
-    
+
     observer.current = new IntersectionObserver(entries => {
       if (entries[0].isIntersecting && hasMore) {
         setPage(prev => {
-           const nextPage = prev + 1;
-           fetchProducts(nextPage);
-           return nextPage;
+          const nextPage = prev + 1;
+          fetchProducts(nextPage);
+          return nextPage;
         });
       }
     });
@@ -93,8 +93,8 @@ export default function ProductsPage() {
         await api.put(`/products/${editId}`, formData);
         toast.success('Product updated');
       } else {
-         await api.post('/products', formData);
-         toast.success('Product created');
+        await api.post('/products', formData);
+        toast.success('Product created');
       }
       setIsModalOpen(false);
       fetchProducts(1, true);
@@ -112,7 +112,7 @@ export default function ProductsPage() {
       });
 
       if (!data.success || !data.products) {
-          throw new Error('Failed to fetch data');
+        throw new Error('Failed to fetch data');
       }
 
       const reportData = data.products.length > 0 ? data.products : products;
@@ -182,18 +182,18 @@ export default function ProductsPage() {
         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 bg-blue-500/10 text-blue-600 rounded-2xl flex items-center justify-center shrink-0">
-               <Package size={24} />
+              <Package size={24} />
             </div>
             <div>
               <h1 className="text-xl md:text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tight leading-none">Product Inventory</h1>
               <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1.5">
-                 Stock Control System <span className="text-blue-600 font-black">({products.length} Items)</span>
+                Stock Control System <span className="text-blue-600 font-black">({products.length} Items)</span>
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-2 w-full lg:w-auto shrink-0">
-            <button 
+            <button
               onClick={handleExportExcel}
               disabled={products.length === 0}
               title="Export Full Inventory"
@@ -201,10 +201,10 @@ export default function ProductsPage() {
             >
               <FileUp size={18} />
             </button>
-            
+
             {(user?.role === 'admin' || user?.role === 'manager') && (
-              <button 
-                onClick={() => handleOpenModal()} 
+              <button
+                onClick={() => handleOpenModal()}
                 title="Add New Product"
                 className="flex flex-1 lg:flex-none items-center justify-center gap-2 px-6 h-10 bg-brand hover:bg-brand-dark text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-lg shadow-brand/20"
               >
@@ -221,24 +221,24 @@ export default function ProductsPage() {
         </div>
       ) : (
         <div className="bg-white dark:bg-slate-800 rounded-3xl border dark:border-slate-700 shadow-xl overflow-hidden transition-all text-xs font-medium">
-          <DataTable 
-            columns={columns} 
-            data={products} 
-            onEdit={(user?.role === 'admin' || user?.role === 'manager') ? handleOpenModal : null} 
-            onDelete={user?.role === 'admin' ? handleDeleteClick : null} 
+          <DataTable
+            columns={columns}
+            data={products}
+            onEdit={(user?.role === 'admin' || user?.role === 'manager') ? handleOpenModal : null}
+            onDelete={user?.role === 'admin' ? handleDeleteClick : null}
             disablePagination={true}
           />
-          
+
           <div ref={lastElementRef} className="h-16 flex items-center justify-center border-t dark:border-slate-700 bg-gray-50/30 dark:bg-slate-900/20">
-             {loadingMore && (
-               <div className="flex items-center gap-2 text-gray-400">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-brand"></div>
-                  <span className="font-black uppercase tracking-widest text-[9px]">Loading more products...</span>
-               </div>
-             )}
-             {!hasMore && products.length > 0 && (
-               <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest bg-white dark:bg-slate-800 px-4 py-1.5 rounded-full border dark:border-slate-700 shadow-sm">End of inventory</span>
-             )}
+            {loadingMore && (
+              <div className="flex items-center gap-2 text-gray-400">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-brand"></div>
+                <span className="font-black uppercase tracking-widest text-[9px]">Loading more products...</span>
+              </div>
+            )}
+            {!hasMore && products.length > 0 && (
+              <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest bg-white dark:bg-slate-800 px-4 py-1.5 rounded-full border dark:border-slate-700 shadow-sm">End of inventory</span>
+            )}
           </div>
         </div>
       )}
@@ -248,35 +248,35 @@ export default function ProductsPage() {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-slate-300">Name</label>
-              <input type="text" required value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} className="mt-1 block w-full border border-gray-300 dark:border-slate-600 rounded-md shadow-sm py-2 px-3 focus:ring-brand focus:border-brand sm:text-sm bg-white dark:bg-slate-700 text-gray-900 dark:text-white transition-colors" />
+              <input type="text" required value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} className="mt-1 block w-full border border-gray-300 dark:border-slate-600 rounded-md shadow-sm py-2 px-3 focus:ring-brand focus:border-brand sm:text-sm bg-white dark:bg-slate-700 text-gray-900 dark:text-white transition-colors" />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-slate-300">Code</label>
-              <input type="text" required value={formData.code} onChange={(e) => setFormData({...formData, code: e.target.value})} className="mt-1 block w-full border border-gray-300 dark:border-slate-600 rounded-md shadow-sm py-2 px-3 focus:ring-brand focus:border-brand sm:text-sm bg-white dark:bg-slate-700 text-gray-900 dark:text-white transition-colors" />
+              <input type="text" required value={formData.code} onChange={(e) => setFormData({ ...formData, code: e.target.value })} className="mt-1 block w-full border border-gray-300 dark:border-slate-600 rounded-md shadow-sm py-2 px-3 focus:ring-brand focus:border-brand sm:text-sm bg-white dark:bg-slate-700 text-gray-900 dark:text-white transition-colors" />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-slate-300">Brand</label>
-              <input type="text" required value={formData.brand} onChange={(e) => setFormData({...formData, brand: e.target.value})} className="mt-1 block w-full border border-gray-300 dark:border-slate-600 rounded-md shadow-sm py-2 px-3 focus:ring-brand focus:border-brand sm:text-sm bg-white dark:bg-slate-700 text-gray-900 dark:text-white transition-colors" />
+              <input type="text" required value={formData.brand} onChange={(e) => setFormData({ ...formData, brand: e.target.value })} className="mt-1 block w-full border border-gray-300 dark:border-slate-600 rounded-md shadow-sm py-2 px-3 focus:ring-brand focus:border-brand sm:text-sm bg-white dark:bg-slate-700 text-gray-900 dark:text-white transition-colors" />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-slate-300">Category</label>
-              <input type="text" required value={formData.category} onChange={(e) => setFormData({...formData, category: e.target.value})} className="mt-1 block w-full border border-gray-300 dark:border-slate-600 rounded-md shadow-sm py-2 px-3 focus:ring-brand focus:border-brand sm:text-sm bg-white dark:bg-slate-700 text-gray-900 dark:text-white transition-colors" />
+              <input type="text" required value={formData.category} onChange={(e) => setFormData({ ...formData, category: e.target.value })} className="mt-1 block w-full border border-gray-300 dark:border-slate-600 rounded-md shadow-sm py-2 px-3 focus:ring-brand focus:border-brand sm:text-sm bg-white dark:bg-slate-700 text-gray-900 dark:text-white transition-colors" />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-slate-300">Purchase Price (৳)</label>
-              <input type="number" min="0" required value={formData.purchasePrice} onChange={(e) => setFormData({...formData, purchasePrice: Number(e.target.value)})} className="mt-1 block w-full border border-gray-300 dark:border-slate-600 rounded-md shadow-sm py-2 px-3 focus:ring-brand focus:border-brand sm:text-sm bg-white dark:bg-slate-700 text-gray-900 dark:text-white transition-colors" />
+              <input type="number" min="0" required value={formData.purchasePrice} onChange={(e) => setFormData({ ...formData, purchasePrice: Number(e.target.value) })} className="mt-1 block w-full border border-gray-300 dark:border-slate-600 rounded-md shadow-sm py-2 px-3 focus:ring-brand focus:border-brand sm:text-sm bg-white dark:bg-slate-700 text-gray-900 dark:text-white transition-colors" />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-slate-300">Sale Price (৳)</label>
-              <input type="number" min="0" required value={formData.salePrice} onChange={(e) => setFormData({...formData, salePrice: Number(e.target.value)})} className="mt-1 block w-full border border-gray-300 dark:border-slate-600 rounded-md shadow-sm py-2 px-3 focus:ring-brand focus:border-brand sm:text-sm bg-white dark:bg-slate-700 text-gray-900 dark:text-white transition-colors" />
+              <input type="number" min="0" required value={formData.salePrice} onChange={(e) => setFormData({ ...formData, salePrice: Number(e.target.value) })} className="mt-1 block w-full border border-gray-300 dark:border-slate-600 rounded-md shadow-sm py-2 px-3 focus:ring-brand focus:border-brand sm:text-sm bg-white dark:bg-slate-700 text-gray-900 dark:text-white transition-colors" />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-slate-300">Initial Stock</label>
-              <input type="number" min="0" required value={formData.stockQuantity} onChange={(e) => setFormData({...formData, stockQuantity: Number(e.target.value)})} className="mt-1 block w-full border border-gray-300 dark:border-slate-600 rounded-md shadow-sm py-2 px-3 focus:ring-brand focus:border-brand sm:text-sm bg-white dark:bg-slate-700 text-gray-900 dark:text-white disabled:bg-gray-100 dark:disabled:bg-slate-800 disabled:text-gray-500 transition-colors" disabled={!!editId} />
+              <input type="number" min="0" required value={formData.stockQuantity} onChange={(e) => setFormData({ ...formData, stockQuantity: Number(e.target.value) })} className="mt-1 block w-full border border-gray-300 dark:border-slate-600 rounded-md shadow-sm py-2 px-3 focus:ring-brand focus:border-brand sm:text-sm bg-white dark:bg-slate-700 text-gray-900 dark:text-white disabled:bg-gray-100 dark:disabled:bg-slate-800 disabled:text-gray-500 transition-colors" disabled={!!editId} />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-slate-300">Supplier Name</label>
-              <input type="text" value={formData.supplierName} onChange={(e) => setFormData({...formData, supplierName: e.target.value})} className="mt-1 block w-full border border-gray-300 dark:border-slate-600 rounded-md shadow-sm py-2 px-3 focus:ring-brand focus:border-brand sm:text-sm bg-white dark:bg-slate-700 text-gray-900 dark:text-white transition-colors" />
+              <input type="text" value={formData.supplierName} onChange={(e) => setFormData({ ...formData, supplierName: e.target.value })} className="mt-1 block w-full border border-gray-300 dark:border-slate-600 rounded-md shadow-sm py-2 px-3 focus:ring-brand focus:border-brand sm:text-sm bg-white dark:bg-slate-700 text-gray-900 dark:text-white transition-colors" />
             </div>
           </div>
           <div className="mt-5 sm:mt-6">
