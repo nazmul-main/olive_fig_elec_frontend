@@ -9,28 +9,26 @@ import useAuthStore from '@/store/useAuthStore';
 export default function DashboardLayout({ children }) {
   const { isAuthenticated, checkAuth, isLoading } = useAuthStore();
   const router = useRouter();
-  const [checking, setChecking] = useState(true);
+  const [mounted, setMounted] = useState(false);
 
   const [isSidebarOpen, setSidebarOpen] = useState(true);
 
   useEffect(() => {
-    const fn = async () => {
-      await checkAuth();
-      setChecking(false);
-    };
-    fn();
+    setMounted(true);
+    // Background auth check to verify token validity, independent of rendering
+    checkAuth();
   }, [checkAuth]);
 
   useEffect(() => {
-    if (!checking && !isAuthenticated) {
+    if (mounted && !isAuthenticated) {
       router.push('/login');
     }
-  }, [checking, isAuthenticated, router]);
+  }, [mounted, isAuthenticated, router]);
 
-  if (checking || isLoading || !isAuthenticated) {
+  if (!mounted || !isAuthenticated) {
     return (
-      <div className="flex h-screen w-full items-center justify-center">
-        <p className="text-gray-500">Loading...</p>
+      <div className="flex h-screen w-full items-center justify-center bg-slate-50 dark:bg-slate-900">
+        <p className="text-gray-500 dark:text-gray-400">Loading...</p>
       </div>
     );
   }
