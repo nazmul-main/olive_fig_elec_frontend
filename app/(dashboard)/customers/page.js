@@ -85,6 +85,25 @@ export default function CustomersPage() {
     setShowDeleteModal(true);
   };
 
+  const confirmDelete = async (password) => {
+    setIsDeleting(true);
+    try {
+      const { data } = await api.delete(`/customers/${customerToDelete._id}`, {
+        data: { password }
+      });
+      if (data.success) {
+        toast.success('Customer deleted successfully!');
+        setShowDeleteModal(false);
+        setCustomerToDelete(null);
+        fetchCustomers();
+      }
+    } catch (e) {
+      toast.error(e.response?.data?.message || 'Failed to delete customer');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   const handleExportExcel = async () => {
     const toastId = toast.loading('Preparing full customer ledger...');
     try {

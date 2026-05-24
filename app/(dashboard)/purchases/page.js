@@ -32,7 +32,7 @@ export default function PurchasesPage() {
   });
 
   const [items, setItems] = useState([
-    { id: Date.now(), productCode: '', productName: '', category: '', quantity: 1, purchasePrice: '', salePrice: '' }
+    { id: Date.now(), productCode: '', productName: '', modelNo: '', category: '', quantity: 1, purchasePrice: '', salePrice: '' }
   ]);
 
   const [paymentData, setPaymentData] = useState({
@@ -102,7 +102,7 @@ export default function PurchasesPage() {
   };
 
   const handleAddItem = () => {
-    setItems([...items, { id: Date.now(), productCode: '', productName: '', category: '', quantity: 1, purchasePrice: '', salePrice: '' }]);
+    setItems([...items, { id: Date.now(), productCode: '', productName: '', modelNo: '', category: '', quantity: 1, purchasePrice: '', salePrice: '' }]);
   };
 
   const removeItem = (id) => {
@@ -141,7 +141,7 @@ export default function PurchasesPage() {
         // Reset full state
         setCurrentStep(1);
         setSupplierData({ id: '', name: '', phone: '', address: '', isNew: false });
-        setItems([{ id: Date.now(), productCode: '', productName: '', category: '', quantity: 1, purchasePrice: '', salePrice: '' }]);
+        setItems([{ id: Date.now(), productCode: '', productName: '', modelNo: '', category: '', quantity: 1, purchasePrice: '', salePrice: '' }]);
         setPaymentData({ paidAmount: 0, note: '', purchaseDate: new Date().toISOString().split('T')[0] });
         fetchData(1, true);
       }
@@ -176,6 +176,7 @@ export default function PurchasesPage() {
         'Brand': p.brand,
         'Category': p.category,
         'Product': p.productName,
+        'Model No': p.modelNo || 'N/A',
         'Code': p.productCode,
         'Quantity': p.quantity,
         'Purchase Price': p.purchasePrice,
@@ -335,6 +336,7 @@ export default function PurchasesPage() {
                         <tr className="text-[10px] uppercase font-black text-gray-400 bg-gray-50/50 dark:bg-slate-900/30">
                           <th className="px-4 py-3 rounded-l-xl">Code</th>
                           <th className="px-4 py-3">Name</th>
+                          <th className="px-4 py-3">Model No</th>
                           <th className="px-4 py-3">Category</th>
                           <th className="px-4 py-3 w-24">Qty</th>
                           <th className="px-4 py-3 w-32">P. Price</th>
@@ -351,6 +353,9 @@ export default function PurchasesPage() {
                             </td>
                             <td className="px-2 py-3">
                               <input required type="text" value={item.productName} onChange={e => updateItem(item.id, 'productName', e.target.value)} placeholder="e.g. iPhone 15 Pro" className={inputCls} />
+                            </td>
+                            <td className="px-2 py-3">
+                              <input type="text" value={item.modelNo || ''} onChange={e => updateItem(item.id, 'modelNo', e.target.value)} placeholder="e.g. A3106" className={inputCls} />
                             </td>
                             <td className="px-2 py-3">
                               <input required type="text" value={item.category} onChange={e => updateItem(item.id, 'category', e.target.value)} placeholder="Mobile" className={inputCls} />
@@ -556,7 +561,14 @@ export default function PurchasesPage() {
                           <p className="font-black text-brand uppercase tracking-tighter">{p.supplierName}</p>
                         </td>
                         <td className="px-6 py-4">
-                          <p className="font-bold text-gray-900 dark:text-white">{p.productName}</p>
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            <p className="font-bold text-gray-900 dark:text-white">{p.productName}</p>
+                            {p.modelNo && (
+                              <span className="text-[9px] bg-brand/10 text-brand px-1.5 py-0.5 rounded-md font-extrabold uppercase tracking-wide">
+                                {p.modelNo}
+                              </span>
+                            )}
+                          </div>
                           <p className="text-[10px] font-mono text-gray-400 uppercase">{p.productCode}</p>
                         </td>
                         <td className="px-6 py-4 text-center font-black text-gray-900 dark:text-white bg-gray-50/30 dark:bg-slate-900/20">{p.quantity}</td>

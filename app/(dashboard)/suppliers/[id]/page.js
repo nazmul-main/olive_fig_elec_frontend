@@ -160,7 +160,16 @@ export default function SupplierDetailPage() {
                   {purchases.map((p) => (
                     <tr key={p._id} className="hover:bg-gray-50 dark:hover:bg-slate-700/30 transition-colors">
                       <td className="px-4 py-3 text-sm text-gray-600 dark:text-slate-300 whitespace-nowrap">{new Date(p.purchaseDate).toLocaleDateString('en-GB')}</td>
-                      <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-white">{p.productName}</td>
+                      <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-white">
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          <span>{p.productName}</span>
+                          {p.modelNo && (
+                            <span className="text-[9px] bg-brand/10 text-brand px-1.5 py-0.5 rounded-md font-extrabold uppercase tracking-wide">
+                              {p.modelNo}
+                            </span>
+                          )}
+                        </div>
+                      </td>
                       <td className="px-4 py-3 text-sm text-gray-500 dark:text-slate-400 font-mono">{p.productCode}</td>
                       <td className="px-4 py-3 text-sm text-gray-500 dark:text-slate-400">{p.category}</td>
                       <td className="px-4 py-3 text-sm font-semibold text-gray-900 dark:text-white">{p.quantity}</td>

@@ -93,6 +93,22 @@ const InvoicePrint = forwardRef(({ invoiceData }, ref) => {
               <span>Grand Total:</span>
               <span>৳{invoiceData.grandTotal}</span>
             </div>
+
+            <div className="flex justify-between py-1 mt-4 text-sm border-t border-dashed pt-2">
+              <span className="text-green-600 font-bold">Paid Amount:</span>
+              <span className="text-green-600 font-bold">৳{invoiceData.paidAmount || 0}</span>
+            </div>
+            {invoiceData.dueAmount > 0 ? (
+              <div className="flex justify-between py-1 text-sm">
+                <span className="text-red-600 font-bold">Due Amount:</span>
+                <span className="text-red-600 font-bold">৳{invoiceData.dueAmount}</span>
+              </div>
+            ) : (
+              <div className="flex justify-between py-1 text-sm">
+                <span className="text-blue-600 font-bold">Status:</span>
+                <span className="text-blue-600 font-bold uppercase">Fully Paid ✨</span>
+              </div>
+            )}
           </div>
         </div>
 
