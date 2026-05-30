@@ -7,7 +7,7 @@ import toast from 'react-hot-toast';
 import useAuthStore from '@/store/useAuthStore';
 import { Printer, FileUp } from 'lucide-react';
 import { generateInvoicePDF } from '@/lib/pdfGenerator';
-import * as XLSX from 'xlsx';
+// xlsx is dynamically imported in handleExportExcel to reduce initial bundle size
 
 export default function SalesHistoryPage() {
   const [sales, setSales] = useState([]);
@@ -108,6 +108,8 @@ export default function SalesHistoryPage() {
   const handleExportExcel = async () => {
     const toastId = toast.loading('Preparing full sales report...');
     try {
+      // Dynamically import xlsx only when needed to keep the initial page bundle small
+      const XLSX = await import('xlsx');
       // Fetch all records from the server for the current filters
       const { data } = await api.get('/sales', {
         params: {
