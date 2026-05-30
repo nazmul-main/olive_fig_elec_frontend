@@ -352,13 +352,13 @@ export default function PurchasesPage() {
                               <input required type="text" value={item.productCode} onChange={e => updateItem(item.id, 'productCode', e.target.value)} placeholder="Code" className={inputCls} />
                             </td>
                             <td className="px-2 py-3">
-                              <input required type="text" value={item.productName} onChange={e => updateItem(item.id, 'productName', e.target.value)} placeholder="e.g. iPhone 15 Pro" className={inputCls} />
+                              <input required type="text" value={item.productName} onChange={e => updateItem(item.id, 'productName', e.target.value)} placeholder="e.g. Air Conditioner 1.5 Ton" className={inputCls} />
                             </td>
                             <td className="px-2 py-3">
-                              <input type="text" value={item.modelNo || ''} onChange={e => updateItem(item.id, 'modelNo', e.target.value)} placeholder="e.g. A3106" className={inputCls} />
+                              <input type="text" value={item.modelNo || ''} onChange={e => updateItem(item.id, 'modelNo', e.target.value)} placeholder="e.g. AC-18INV" className={inputCls} />
                             </td>
                             <td className="px-2 py-3">
-                              <input required type="text" value={item.category} onChange={e => updateItem(item.id, 'category', e.target.value)} placeholder="Mobile" className={inputCls} />
+                              <input required type="text" value={item.category} onChange={e => updateItem(item.id, 'category', e.target.value)} placeholder="e.g. AC, Refrigerator, TV" className={inputCls} />
                             </td>
                             <td className="px-2 py-3">
                               <input required type="number" min="1" value={item.quantity} onChange={e => updateItem(item.id, 'quantity', e.target.value)} className={inputCls} />

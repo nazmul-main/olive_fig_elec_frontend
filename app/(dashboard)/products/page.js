@@ -6,7 +6,7 @@ import Modal from '@/components/ui/Modal';
 import ConfirmDeleteModal from '@/components/ui/ConfirmDeleteModal';
 import toast from 'react-hot-toast';
 import useAuthStore from '@/store/useAuthStore';
-import { FileUp, Package, Plus, Trash2, Box, Search, X } from 'lucide-react';
+import { FileUp, Package, Trash2, Box, Search, X } from 'lucide-react';
 import * as XLSX from 'xlsx';
 
 export default function ProductsPage() {
@@ -268,16 +268,6 @@ export default function ProductsPage() {
             >
               <FileUp size={18} />
             </button>
-
-            {(user?.role === 'admin' || user?.role === 'manager') && (
-              <button
-                onClick={() => handleOpenModal()}
-                title="Add New Product"
-                className="flex flex-1 lg:flex-none items-center justify-center gap-2 px-6 h-10 bg-brand hover:bg-brand-dark text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-lg shadow-brand/20"
-              >
-                <Plus size={16} /> <span className="hidden sm:inline">Add New</span>
-              </button>
-            )}
           </div>
         </div>
       </div>
