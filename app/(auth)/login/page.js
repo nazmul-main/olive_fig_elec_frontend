@@ -6,6 +6,8 @@ import toast from 'react-hot-toast';
 import {
   Mail,
   Lock,
+  Eye,
+  EyeOff,
   Cpu,
   Settings,
   Zap,
@@ -34,6 +36,7 @@ import {
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const { login, isLoading } = useAuthStore();
   const router = useRouter();
 
@@ -143,13 +146,20 @@ export default function LoginPage() {
               <Lock size={20} />
             </div>
             <input
-              type="password"
+              type={showPassword ? 'text' : 'password'}
               required
-              className="block w-full pl-14 pr-5 py-4 border border-white/5 rounded-2xl bg-black/40 text-white text-base focus:ring-2 focus:ring-brand focus:border-transparent transition-all outline-none placeholder:text-white/20 focus:bg-black/60"
+              className="block w-full pl-14 pr-12 py-4 border border-white/5 rounded-2xl bg-black/40 text-white text-base focus:ring-2 focus:ring-brand focus:border-transparent transition-all outline-none placeholder:text-white/20 focus:bg-black/60"
               placeholder="Password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
+            <button
+              type="button"
+              className="absolute inset-y-0 right-0 pr-5 flex items-center text-white/30 hover:text-brand transition-colors outline-none focus:text-brand"
+              onClick={() => setShowPassword(!showPassword)}
+            >
+              {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+            </button>
           </div>
 
           <button
