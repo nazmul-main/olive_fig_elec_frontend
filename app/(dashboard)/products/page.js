@@ -181,6 +181,7 @@ export default function ProductsPage() {
       const exportData = reportData.map(p => ({
         'Code': p.code,
         'Name': p.name,
+        'Model No': p.modelNo || 'N/A',
         'Brand': p.brand,
         'Category': p.category,
         'Purchase Price': p.purchasePrice,
@@ -188,7 +189,9 @@ export default function ProductsPage() {
         'Stock Qty': p.stockQuantity,
         'Stock Value (Cost)': p.purchasePrice * p.stockQuantity,
         'Stock Value (Sale)': p.salePrice * p.stockQuantity,
-        'Supplier': p.supplierName || 'N/A'
+        'Supplier': p.supplierName || 'N/A',
+        'Purchase Date': p.createdAt ? new Date(p.createdAt).toLocaleDateString('en-GB') : 'N/A',
+        'Status': p.isActive === false ? 'Inactive' : 'Active'
       }));
 
       const worksheet = XLSX.utils.json_to_sheet(exportData);
